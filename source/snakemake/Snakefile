@@ -169,16 +169,10 @@ _logging.basicConfig(level=LOG_LEVEL,
 ################################
 #     DEFINE TARGET OUTPUT     #
 ################################
-#OUTPUT = [expand('rseqc/{sample}_bam_qc.txt', sample=SAMID),
-#          expand('rseqc/{sample}_bam_gc.txt', sample=SAMID)]
 OUTPUT = [expand('rseqc/{sample}_bam_qc.txt', sample=SAMID),
           expand('rseqc/{sample}_bam_gc.txt', sample=SAMID),
           expand('peak/{sample}_peaks.xls', sample=SAMID),
            expand('chipqc/{sample}_chipqc.csv.gz', sample=SAMID)]
-#OUTPUT = [expand('rseqc/{sample}_bam_qc.txt', sample=SAMID),
-#          expand('rseqc/{sample}_bam_gc.txt', sample=SAMID),
-#          expand('peak/{sample}_peaks.xls', sample=SAMID),
-#           'analysis/report/all_samples_chipqc_report.html']
 if RUN_FASTQC == 1:
     OUTPUT.append(expand('fastqc/{sample}_fastqc.tar.gz', sample=SAMID))
 
@@ -769,44 +763,3 @@ rule chipqc:
           conda env export --no-builds > info/chipqc.info
         '''
 
-
-
-### Get peak metrics across all samples and gen report with ChIPQC
-#rule chipqc:
-#    input:
-#        bam=expand('bam/{samid}.bam', samid=SAMID),
-#        idx=expand('bam/{samid}.bam.bai', samid=SAMID),
-#        peak=expand('peak/{samid}_peaks.narrowPeak', samid=SAMID) if PEAK_MODE=='narrow' else expand('peak/{samid}_peaks.broadPeak', samid=SAMID)
-#    output:
-#        csv='analysis/data/all_chipqc.csv.gz',
-#        report='analysis/report/all_samples_chipqc_report.html'
-#    benchmark:
-#        'benchmark/all_chipqc.tab'
-#    log:
-#        'log/all_chipqc.log'
-#    conda:
-#        SOURCEDIR+"/../envs/chipqc.yaml"
-#    params:
-#        sample='{sample}',
-#        predir=PREDIR,
-#        dtadir=DATADIR,
-#        mta='sample_metadata.csv',
-#        makereport='make-report',
-#        srcdir=SOURCEDIR,
-#        doencrypt=DOENCRYPT,
-#        openssl=OPENSSL,
-#        encrypt_pass=ENCRYPT_PASS,
-#        hash=HASH,
-#        doarchive=DOARCHIVE,
-#        archive=ARCHIVE,
-#        cloud=CLOUD
-#    priority: 1
-#    threads: 1
-#    shell:
-#        '''
-#          echo "Rscript --vanilla --quiet {params.srcdir}/r/init-chipqc-all-peak-metrics.r {params.predir} {params.dtadir} {params.mta} {params.makereport}" | tee {log}
-#          Rscript --vanilla --quiet {params.srcdir}/r/init-chipqc-all-peak-metrics.r {params.predir} {params.dtadir} {params.mta} {params.makereport} 2>> {log}
-#
-#          ## export rule env details
-#          conda env export --no-builds > info/chipqc.info
-#        '''
