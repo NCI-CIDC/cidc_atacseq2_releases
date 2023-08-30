@@ -1,0 +1,188 @@
+#!/usr/bin/python3
+#############################################################################################################
+# pipeline_template
+#
+# This program is free software that contains third party software subject to various licenses, 
+# namely, the GNU General Public License version 3 (or later), the GNU Affero General Public License 
+# version 3 (or later), and the LaTeX Project Public License v.1.3(c). A list of the software contained 
+# in this program, including the applicable licenses, can be accessed here: 
+#
+# 
+# You can redistribute and/or modify this program, including its components, only under the terms of 
+# the applicable license(s).  
+#
+# This program is distributed in the hope that it will be useful, but "as is," WITHOUT ANY WARRANTY; 
+# without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+#
+# Program:  init-workflow
+# Version:  pipeline_template
+# Author:   Sami R. Cherikh, Travis L. Jensen
+# Purpose:  Initialize snakemake workflow. Adding and processing command line args. Call to parse config Excel file
+# Input:    N/A
+# Output:   N/A
+#############################################################################################################
+
+import argparse
+import os
+import subprocess
+import sys
+import snakemake 
+import logging
+import utils
+
+## Get get the directory that this script sits in
+scriptdir = os.path.dirname(os.path.realpath(__file__)) + '/..'
+
+############
+# Metadata #
+############
+
+__author__    = ['Sami R. Cherikh', 'Travis L. Jensen']
+##__copyright__ = 'Copyright (C) 2018 The Emmes Corporation'
+__licesnse__  = 'GPL'
+__version__   = '0.1'
+__maintainer  = ['Sami R. Cherikh', 'Travis L. Jensen']
+__email__     = 'sami.cherikh@nih.gov'
+__status__    = 'Development'
+
+
+
+################################
+# Parse command line arguments #
+################################
+
+parser = argparse.ArgumentParser(prog="<PIPELINE> " + __version__)
+parser.add_argument('-P','--run-preprocessing', help='Run pre-processing', action='store_true', default=False)
+parser.add_argument('-I','--use-local-image',   help='Run rule jobs using software on local machine image instead of conda envs', action='store_true', default=False)
+parser.add_argument('-c','--config',       		help='Path to XLSX configuration file', default='check_string_for_empty')
+parser.add_argument('-T','--threads',           help='Number of CPU cores to dedicate to Snakemake run. If more threads are specified than on the machine, all threads on the current machine are used', default=1)
+parser.add_argument('-l','--log',          		help='Log file to write to. The log MUST be printed in the pipeline directory (ex=/home/run_log.txt)', default='check_string_for_empty')
+parser.add_argument('-C','--continue-run',  	help='Continue preprocessing where the prior run left off', action='store_true', default=False)
+parser.add_argument('-v','--version',      		help='Print the pipeline version and exit', action='store_true', default=False)
+parser.add_argument('-q','--quiet',        		help='Only print warnings and errors', action='store_true', default=False)
+parser.add_argument('-d','--debug',       		help='Print debug messages', action='store_true', default=False)
+parser.add_argument('-n','--dryrun',			help='Execute dry run. Lists jobs to be performed', action='store_true', default=False)
+parser.add_argument('--save-int-local-files',	help='Save all intermediate workflow files locally', action='store_true', default=False)
+parser.add_argument('--latency-wait',     		help='Set pause latency of workflow for file IO', default=3)
+parser.add_argument('--unlock',     			help='Unlock working directories in the case of a kill signal or power loss', action='store_true', default=False)
+
+args = parser.parse_args()
+
+
+
+##################
+# Version output #
+##################
+
+## Print version and exit 
+if args.version:
+	print('<PIPELINE> ' + __version__)
+	exit(0)
+
+
+
+############################
+# Configure stdout logging #
+############################
+
+if args.quiet:
+	log_level = logging.WARNING
+elif args.debug:
+	log_level = logging.DEBUG
+else:
+	log_level = logging.INFO
+
+logging.basicConfig(level=log_level,
+					format='[cidc-atac] %(asctime)s - %(levelname)s - %(message)s',
+					datefmt='%m/%d/%Y %I:%M:%S %p',
+					handlers=[logging.StreamHandler(sys.stdout)])
+
+
+
+##########################################
+# Exit if we aren't given anything to do #
+##########################################
+
+if args.config=='check_string_for_empty':
+	logging.error('A configuration file must be supplied. Run init-workflow --help for more information.')
+	exit(1)
+
+
+
+########################
+# Parse configuration  #
+########################
+
+config_parser = scriptdir + '/r/parse-configuration.r'
+cmd = 'Rscript ' + config_parser + ' ' + args.config + ' ' + scriptdir 
+try:
+	utils.logging_call(cmd, shell=True)
+except subprocess.CalledProcessError:
+	logging.error('Configuration parsing failed. See above for more details.')
+	exit(1)
+
+
+
+############################
+# Grab config directories  #
+############################
+
+f               = open(scriptdir+'/../dir.csv')
+predir          = f.readline().strip()
+reportdir       = f.readline().strip()
+pre_yaml_config = f.readline().strip()
+sample_metadata = f.readline().strip()
+f.close()
+
+datadir   = reportdir+'/data'
+
+
+
+##########################
+# Configure file logging #
+##########################
+
+if args.log == 'check_string_for_empty':
+	args.log = predir+'/preprocess.log'
+else:
+	args.log = os.path.abspath(os.path.dirname(args.log)) + '/' + os.path.basename(args.log)
+
+## add file handler to logger
+logging.getLogger('').addHandler(logging.FileHandler(args.log))
+
+
+
+####################################
+# Run selected workflow components #
+####################################
+
+## Preprocessing 
+if args.run_preprocessing or args.unlock:
+	if args.run_preprocessing:
+		logging.info('Starting pre-processing')
+	if args.unlock:
+		logging.info('Unlocking working directory')
+
+	## remove stream handler to stdout from logger once starting workflow as not to double the stdout from snakemake
+	logging.getLogger('').removeHandler(logging.getLogger().handlers[0])
+
+	snakemake.snakemake(snakefile=scriptdir+'/snakemake/Snakefile',
+					unlock=args.unlock,
+					cores=int(args.threads),
+					force_incomplete=True,
+					workdir=predir,
+					config={'srcdir'       :scriptdir,
+							'predir': predir,
+							'datadir'      :datadir,
+							'log_level'    :log_level,
+							'log_file'     :args.log,
+							'ncores'       :int(args.threads),
+							'saveintlocalfiles':args.save_int_local_files},
+					forceall=(not args.continue_run),
+					dryrun=args.dryrun,
+					log_handler=[utils.logHandler],
+					quiet=args.quiet,
+					notemp=args.save_int_local_files,
+					use_conda=(not args.use_local_image),
+					latency_wait=args.latency_wait)

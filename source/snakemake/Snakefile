@@ -1,0 +1,812 @@
+#############################################################################################################
+# pipeline_template
+#
+# This program is free software that contains third party software subject to various licenses, 
+# namely, the GNU General Public License version 3 (or later), the GNU Affero General Public License 
+# version 3 (or later), and the LaTeX Project Public License v.1.3(c). A list of the software contained 
+# in this program, including the applicable licenses, can be accessed here: 
+#
+# You can redistribute and/or modify this program, including its components, only under the terms of 
+# the applicable license(s).  
+#
+# This program is distributed in the hope that it will be useful, but "as is," WITHOUT ANY WARRANTY; 
+# without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+#
+# Program:  Snakefile.sh
+# Version:  0.1
+# Author:   Sami R. Cherikh, Travis L. Jensen
+# Purpose:  Main snakefile for workflow template. Performs alignment of sample fastq files
+# Input:    Sample fastq files stored in a cloud location (google cloud, aws)
+# Output:   'sample_metadata.csv','rseqc/bam_qc_parsed.tab', 'rseqc/bam_gc_parsed.tab'
+#############################################################################################################
+
+## Import modules
+import shutil
+import logging as _logging
+import psutil
+import os
+
+
+##############################
+#       CONFIGURATION        #
+##############################
+## Specify YAML config file location
+configfile: "preprocess_config.yaml"
+
+## Directories
+## source dir
+SOURCEDIR     = config["srcdir"]
+## pre-processing dir
+PREDIR     = config["predir"]
+## analysis data results dir
+DATADIR       = config["datadir"]
+
+## Program locations
+CLOUD        = config["cloud_prog"]
+OPENSSL      = config["openssl_prog"]
+CUTADAPT     = config["cutadapt_prog"]
+TRIMMOMATIC  = config["trimmomatic_prog"]
+FASTQC       = config["fastqc_prog"]
+HISAT2        = config["hisat_prog"]
+BWA        = config["bwa_prog"]
+HISAT2BUILD   = HISAT2 + '-build'
+HISAT2SPLICE  = HISAT2 + '_extract_splice_sites.py'
+SAMTOOLS      = config["samtools_prog"]
+FASTQDUMP    = config["fastqdump_prog"]
+RSEQC         = config["rseqc_dir"]
+MACS         = config["macs_prog"]
+
+
+
+## Use the source dir to import helper modules
+sys.path.append(SOURCEDIR+'/python')
+import trimadapters
+import getfile  
+import putfile  
+import utils 
+import time
+
+## Logging config
+LOG_LEVEL = config["log_level"]
+LOG_FILE  = config["log_file"]
+
+
+
+##############################
+#       SET GLOBAL VARS      #
+##############################
+## number of cores dedicated to run
+NCORES  = int(config["ncores"])
+
+## output sub folders
+SUBDIRS  = config["subdirs"]
+
+## Ensembl version number
+ENSEMBL = config["ensembl_version"]
+
+## Reference datasets
+INDEXSEQ = 'genome/Homo_sapiens.ensembl.version'+str(ENSEMBL)+'.genome.fa'
+ANNOTATIONS_GTF = 'annot/Homo_sapiens.ensembl.version'+str(ENSEMBL)+'.chr.gtf'
+
+## Run fastqc?
+RUN_FASTQC = int(config["run_fastqc"])
+
+## Save intermediate files?
+REMOVEINTFILES = not config["saveintlocalfiles"]
+
+## List of samples to process
+SAMID        = utils.toList(config["samid"]) 
+
+## List of input files
+FASTQ_1      = utils.toList(config["fastq1"])
+FASTQ_2      = utils.toList(config["fastq2"])
+
+## Adapter sequences
+FP_ADAPTERS   = [x.strip() for x in utils.toList(config["fp_adapter_seq"])]
+TP_ADAPTERS   = [x.strip() for x in utils.toList(config["tp_adapter_seq"])]
+
+## Set single or paired end
+if (FASTQ_2 != ['']):
+    ENDS  = ['1','2']
+else:
+    ENDS  = ['1']
+
+## Strandedness of experiment
+STRANDED = int(config["stranded"])
+
+## Determine whether adapters should be trimmed or not
+TRIM_FP = sum([x == 'NA'  for x in FP_ADAPTERS]) == 0
+TRIM_TP = sum([x == 'NA'  for x in TP_ADAPTERS]) == 0
+TRIM_ADAPTERS_OUTPUT = '.fastq.gz' if (TRIM_FP or TRIM_TP) else '.skipped'
+
+## Macs peak caller mode
+PEAK_MODE = str(config["peak_mode"])
+
+## Macs peak caller ext size for broad calls
+EXTSIZE = str(config["ext_size"])
+
+## Macs peak caller arbitrary shift in bp here
+SHIFT = str(config["shift"])
+
+## Macs min qvalue for sig peak
+PEAK_FDR = str(config["peak_fdr"])
+
+## Create peak mode str for macs
+if len(ENDS)==1 and PEAK_MODE=='broad':
+    PEAK_MODE_STR = '--broad --broad-cutoff %s --nomodel --shift %s --extsize %s' % (PEAK_FDR, SHIFT, EXTSIZE)
+elif len(ENDS)==2 and PEAK_MODE=='broad':
+    PEAK_MODE_STR = '--broad --broad-cutoff %s --nomodel --extsize %s' % (PEAK_FDR, EXTSIZE)
+else:
+    PEAK_MODE_STR = ''
+
+## Configure uploading 
+ARCHIVE = config["archive_bucket"]
+DOARCHIVE = len(ARCHIVE) != 0
+
+## Configure encryption
+DOENCRYPT    = int(config["encrypt_local"]) == 1
+DECRYPT_PASS = config["decrypt_pass"]
+ENCRYPT_PASS = config["encrypt_pass"]
+
+## Configure quality trimming level
+QUAL_CUTOFF = config["quality_trim"]
+
+## save unmapped reads or not
+SAVEUNMAPPED = int(config["save_unmapped"]) == 1
+
+## hash for encryption/decryption & Checksums
+HASH = config["hash"]
+
+## Set up logging to log file
+_logging.basicConfig(level=LOG_LEVEL,
+                    format='[cidc-atac] %(asctime)s - %(levelname)s - %(message)s',
+                    datefmt='%m/%d/%Y %I:%M:%S %p',
+                    handlers=[_logging.FileHandler(LOG_FILE)])
+
+
+
+################################
+#     DEFINE TARGET OUTPUT     #
+################################
+#OUTPUT = [expand('rseqc/{sample}_bam_qc.txt', sample=SAMID),
+#          expand('rseqc/{sample}_bam_gc.txt', sample=SAMID)]
+OUTPUT = [expand('rseqc/{sample}_bam_qc.txt', sample=SAMID),
+          expand('rseqc/{sample}_bam_gc.txt', sample=SAMID),
+          expand('peak/{sample}_peaks.xls', sample=SAMID),
+           expand('chipqc/{sample}_chipqc.csv.gz', sample=SAMID)]
+#OUTPUT = [expand('rseqc/{sample}_bam_qc.txt', sample=SAMID),
+#          expand('rseqc/{sample}_bam_gc.txt', sample=SAMID),
+#          expand('peak/{sample}_peaks.xls', sample=SAMID),
+#           'analysis/report/all_samples_chipqc_report.html']
+if RUN_FASTQC == 1:
+    OUTPUT.append(expand('fastqc/{sample}_fastqc.tar.gz', sample=SAMID))
+
+
+
+#########################################
+#    Define any onstart or onsuccess    #
+#########################################
+onsuccess:
+    ## Merge sample rseqc results into single result files
+    merged_results = utils.mergeRSEQC(SOURCEDIR)
+
+    ## Copy some results to analysis data dir
+    [shutil.copy2(x, DATADIR) for x in merged_results]
+
+    ## call ChIPQC on samples in mta and output results to analysis data dir - set last arg to one of the options [make-report, no-report]
+    shell('Rscript --vanilla '+SOURCEDIR+'/r/init-chipqc-all-peak-metrics.r '+PREDIR+' '+DATADIR+' sample_metadata.csv make-report')
+
+    ## add chipqc output to results to enc and archive if needed
+    merged_results.append(['analysis/report/'+f for f in os.listdir('analysis/report')])
+    merged_results.append('analysis/data/all_chipqc.csv.gz')
+
+    ## Encrypt and/or upload main results if needed
+    if DOENCRYPT:
+        utils.encryptFile(file=merged_results, openssl=OPENSSL, password=ENCRYPT_PASS, hash=HASH)
+        merged_results = [f+'.enc' for f in merged_results]
+    if DOARCHIVE:
+        [putfile.upload(file=x, destination=ARCHIVE, prog=CLOUD, doencrypt=DOENCRYPT) for x in merged_results]
+
+    shell("echo 'Pipeline complete!'")
+
+
+
+################################
+#   PASS OUTPUT TO all RULE    #
+################################
+rule all:
+    input:
+        OUTPUT
+    
+
+
+################################
+#        PIPELINE RULES        #
+################################
+## Set up directory structure UPDATE make dirs based on config input
+## Ignores non-zero exit status returned when any directories already exist
+rule directory_setup:
+    output:
+        'progress/dirs.done'
+    params:
+        subdirs=SUBDIRS
+    threads:1
+    shell:
+        '''
+          mkdir {params.subdirs} -p 2> /dev/null
+          touch {output}
+        '''
+
+
+
+## Build reference genome index
+rule build_bwa_index:
+    input:
+        rules.directory_setup.output
+    output:
+        'progress/bwa_index_built.done'
+    benchmark:
+        'benchmark/build_bwa_index.tab'
+    log:
+        'log/build_bwa_index.log'
+    conda:
+        SOURCEDIR+"/../envs/bwa.yaml"
+    params:
+        indexseq=INDEXSEQ
+    priority: 1000
+    threads: max(1,NCORES)
+    shell:
+        '''
+          echo "bwa index {params.indexseq}" > {log}
+          bwa index {params.indexseq} 2>> {log}
+          touch {output}
+
+          ## export rule env details
+          conda env export --no-builds > info/bwa.info
+        '''
+
+
+
+## Get input
+rule getfile:
+    input:
+        rules.directory_setup.output,
+        rules.build_bwa_index.output
+    output:
+        temp(expand('input/{{sample}}_{pe}.fastq.gz',  pe=ENDS))
+    benchmark:
+        'benchmark/{sample}_getfile.tab'
+    log:
+        'log/{sample}_getfile.log'
+    conda:
+        SOURCEDIR+"/../envs/getfile.yaml"
+    params:
+        sample='{sample}',
+        srcdir=SOURCEDIR,
+        ends=','.join(ENDS),
+        samid=','.join(SAMID),
+        fastq1=','.join(FASTQ_1),
+        fastq2=','.join(FASTQ_2),
+        cloud=CLOUD,
+        fastqdump=FASTQDUMP,
+        openssl=OPENSSL,
+        decrypt_pass=DECRYPT_PASS,
+        hash=HASH,
+        output_joined=','.join(expand('input/{{sample}}_{pe}.fastq.gz',  pe=ENDS))
+    priority: 2
+    threads: max(1,min(8,NCORES))
+    shell:
+        '''
+          echo python3 {params.srcdir}/python/init-getfile.py --src {params.srcdir} --ends {params.ends} \
+          --samid {params.samid} --fastq1 {params.fastq1} --fastq2 {params.fastq2} \
+          --cloud {params.cloud} --fastqdump {params.fastqdump} --openssl {params.openssl} --decrypt-pass {params.decrypt_pass} --hash {params.hash} \
+          --sample {params.sample} --output {params.output_joined} \
+          > {log}
+
+          python3 {params.srcdir}/python/init-getfile.py --src {params.srcdir} --ends {params.ends} \
+          --samid {params.samid} --fastq1 {params.fastq1} --fastq2 {params.fastq2} \
+          --cloud {params.cloud} --fastqdump {params.fastqdump} --openssl {params.openssl} --decrypt-pass {params.decrypt_pass} --hash {params.hash} \
+          --sample {params.sample} --output {params.output_joined} \
+          2>> {log}
+
+          ## export rule env details
+          conda env export --no-builds > info/getfile.info
+        '''
+
+
+
+### Optionally trim adapters with cutadapt
+rule trimadapters:
+    input:
+        fa=expand('input/{{sample}}_{pe}.fastq.gz',  pe=ENDS)
+    output:
+        temp([x + TRIM_ADAPTERS_OUTPUT for x in expand('cutadapt/{{sample}}_{pe}', pe=ENDS)])
+    benchmark:
+        'benchmark/{sample}_trimadapters.tab'
+    log:
+        'log/{sample}_trimadapters.log'
+    conda:
+        SOURCEDIR+"/../envs/trimadapters.yaml"
+    params:
+        sample='{sample}',
+        srcdir=SOURCEDIR,
+        samid=','.join(SAMID),
+        trim_fp=TRIM_FP,
+        trim_tp=TRIM_TP,
+        fp_adapters=','.join(FP_ADAPTERS),
+        tp_adapters=','.join(TP_ADAPTERS),
+        cutadapt=CUTADAPT,
+        input_joined=','.join(expand('input/{{sample}}_{pe}.fastq.gz',  pe=ENDS)),
+        output_joined=','.join([x + TRIM_ADAPTERS_OUTPUT for x in expand('cutadapt/{{sample}}_{pe}', pe=ENDS)])
+    priority: 3
+    threads: max(1,min(8,NCORES))
+    shell:
+      '''
+        echo python3 {params.srcdir}/python/init-trimadapters.py --src {params.srcdir} --trim-fp {params.trim_fp} --trim-tp {params.trim_tp}\
+        --samid {params.samid} --fp-adapters {params.fp_adapters} --tp-adapters {params.tp_adapters} \
+        --cutadapt {params.cutadapt} --sample {params.sample} --input {params.input_joined} --output {params.output_joined} --threads {threads}\
+        > {log}
+
+        python3 {params.srcdir}/python/init-trimadapters.py --src {params.srcdir} --trim-fp {params.trim_fp} --trim-tp {params.trim_tp}\
+        --samid {params.samid} --fp-adapters {params.fp_adapters} --tp-adapters {params.tp_adapters} \
+        --cutadapt {params.cutadapt} --sample {params.sample} --input {params.input_joined} --output {params.output_joined} --threads {threads} --log {log}\
+        2>> {log}
+
+        ## export rule env details
+        conda env export --no-builds > info/trimadapters.info
+      '''
+
+    
+
+## Optionally quality-trim reads with Trimmomatic
+rule qualityfilter:
+    input:
+        rules.trimadapters.output if TRIM_FP or TRIM_TP else expand('input/{{sample}}_{pe}.fastq.gz',  pe=ENDS)
+    output:
+    	temp(expand('rqual_filter/{{sample}}_{pe}{paired}_qual.fastq.gz', pe=ENDS, paired=['P','U'])) if len(ENDS)==2 else temp(expand('rqual_filter/{{sample}}_{pe}_qual.fastq.gz', pe=ENDS))
+    benchmark:
+        'benchmark/{sample}_qualityfilter.tab'
+    log:
+        'log/{sample}_qualityfilter.log'
+    conda:
+        SOURCEDIR+"/../envs/qualityfilter.yaml"
+    params:
+        sample='{sample}',
+        srcdir=SOURCEDIR,
+        ends=','.join(ENDS),
+        trimmomatic=TRIMMOMATIC,
+        qual_cutoff=QUAL_CUTOFF,
+        input_joined=','.join([x + TRIM_ADAPTERS_OUTPUT for x in expand('cutadapt/{{sample}}_{pe}', pe=ENDS)] if TRIM_FP or TRIM_TP else expand('input/{{sample}}_{pe}.fastq.gz',  pe=ENDS)),
+        output_joined=','.join(expand('rqual_filter/{{sample}}_{pe}{paired}_qual.fastq.gz', pe=ENDS, paired=['P','U']) if len(ENDS)==2 else expand('rqual_filter/{{sample}}_{pe}_qual.fastq.gz', pe=ENDS))
+    priority: 3
+    threads: max(1,min(8,NCORES))
+    shell:
+      '''
+        echo python3 {params.srcdir}/python/init-qualityfilter.py --src {params.srcdir} --ends {params.ends} --threads {threads} \
+        --trimmomatic {params.trimmomatic} --qual-cutoff {params.qual_cutoff} --input {params.input_joined} --output {params.output_joined} --log {log}\
+        > {log}
+
+        python3 {params.srcdir}/python/init-qualityfilter.py --src {params.srcdir} --ends {params.ends} --threads {threads} \
+        --trimmomatic {params.trimmomatic} --qual-cutoff {params.qual_cutoff} --input {params.input_joined} --output {params.output_joined} --log {log} \
+        2>> {log}
+
+        ## export rule env details
+        conda env export --no-builds > info/qualityfilter.info
+      '''
+
+
+
+## Map reads to the reference genome using BWA
+rule run_bwa:
+    input:
+        tch=rules.build_bwa_index.output,
+        fa=rules.qualityfilter.output 
+    output:
+        aln=temp('tmp/{sample}.sam')
+    benchmark:
+        'benchmark/{sample}_run_bwa.tab'
+    log:
+        'log/{sample}_run_bwa.log'
+    conda:
+        SOURCEDIR+"/../envs/bwa.yaml"
+    params:
+        sample='{sample}',
+        indexseq=INDEXSEQ,
+        in_fa_str=expand('rqual_filter/{{sample}}_{pe}{paired}_qual.fastq.gz', pe=ENDS, paired=['P','U'])[0]+' '+expand('rqual_filter/{{sample}}_{pe}{paired}_qual.fastq.gz', pe=ENDS, paired=['P','U'])[2] if len(ENDS)==2 else expand('rqual_filter/{{sample}}_{pe}_qual.fastq.gz', pe=ENDS)[0]
+    priority: 4
+    threads: max(1,min(8,NCORES))
+    shell:
+        '''
+          echo "bwa mem -t {threads} {params.indexseq} {params.in_fa_str} > {output.aln}" | tee {log}
+          bwa mem -t {threads} {params.indexseq} {params.in_fa_str} > {output.aln} 2>> {log}
+        '''
+
+
+
+### Convert SAM to BAM and sort BAM
+rule sam_to_bam:
+    input:
+        rules.run_bwa.output.aln
+    output:
+        'bam/{sample}.bam'
+    benchmark:
+        'benchmark/{sample}_sam_to_bam.tab'
+    conda:
+        SOURCEDIR+"/../envs/samtools.yaml"
+    log:
+        'log/{sample}_sam_to_bam.log'
+    params:
+        sample='{sample}',
+        srcdir=SOURCEDIR,
+        doencrypt=DOENCRYPT,
+        openssl=OPENSSL,
+        encrypt_pass=ENCRYPT_PASS,
+        hash=HASH,
+        doarchive=DOARCHIVE,
+        archive=ARCHIVE,
+        cloud=CLOUD
+    priority: 5
+    threads: max(1,min(8,NCORES))
+    shell:
+        '''
+          echo "samtools view -@ {threads} -Sbh {input} | samtools sort -@ {threads} > {output}" > {log}
+          samtools view -@ {threads} -Sbh {input} | samtools sort -@ {threads} > {output} 2>> {log}
+
+          ## encrypt and archive if needed
+          python3 {params.srcdir}/python/init-encrypt-archive.py --src {params.srcdir}\
+          --doencrypt {params.doencrypt} --openssl {params.openssl} --encrypt-pass {params.encrypt_pass} --hash {params.hash} \
+          --doarchive {params.doarchive} --archive {params.archive} --cloud {params.cloud} \
+          --output {output} \
+          2>> {log}
+
+          ## export rule env details
+          conda env export --no-builds > info/samtools.info
+        '''
+
+
+
+## Index BAM
+rule index_bam:
+    input:
+        bam='bam/{sample}.bam'
+    output:
+        'bam/{sample}.bam.bai'
+    benchmark:
+        'benchmark/{sample}_index_bam.tab'
+    log:
+        'log/{sample}_index_bam.log'
+    conda:
+        SOURCEDIR+"/../envs/samtools.yaml"
+    params:
+        sample='{sample}'
+    priority: 5
+    threads: max(1,min(8,NCORES))
+    shell:
+        '''
+          echo "samtools index -@ {threads} {input.bam}" > {log}
+          samtools index -@ {threads} {input.bam} 2>> {log}
+        '''
+
+
+
+## Run FASTQC
+rule fastqc:
+    input:
+        'bam/{sample}.bam'
+    output:
+        temp('fastqc/{sample}_fastqc.tar.gz')
+    benchmark:
+        'benchmark/{sample}_fastqc.tab'
+    log:
+        'log/{sample}_fastqc.log'
+    conda:
+        SOURCEDIR+"/../envs/fastqc.yaml"
+    params:
+        sample='{sample}',
+        fq_base='fastqc/{sample}_fastqc',
+        fq_zip='fastqc/{sample}_fastqc.zip',
+        fq_html='fastqc/{sample}_fastqc.html',
+        srcdir=SOURCEDIR,
+        doencrypt=DOENCRYPT,
+        openssl=OPENSSL,
+        encrypt_pass=ENCRYPT_PASS,
+        hash=HASH,
+        doarchive=DOARCHIVE,
+        archive=ARCHIVE,
+        cloud=CLOUD
+    priority: 1
+    threads: 1
+    shell:
+        '''
+          echo "fastqc {input} -q -o fastqc" > {log}
+          fastqc {input} -q -o fastqc 2>> {log}
+
+          ## unzip, remove zipped results, HTML duplicate, and tarball results
+          unzip -qq {params.fq_zip} -d {params.fq_base} && tar -zcf {output} {params.fq_base} && rm -r {params.fq_zip} {params.fq_html} {params.fq_base}
+
+          ## encrypt and archive if needed
+          python3 {params.srcdir}/python/init-encrypt-archive.py --src {params.srcdir}\
+          --doencrypt {params.doencrypt} --openssl {params.openssl} --encrypt-pass {params.encrypt_pass} --hash {params.hash} \
+          --doarchive {params.doarchive} --archive {params.archive} --cloud {params.cloud} \
+          --output {output} \
+          2>> {log}
+
+          ## export rule env details
+          conda env export --no-builds > info/fastqc.info
+        '''
+
+
+
+## Run RSEQC bam_stat.py
+rule bam_qc:
+    input:
+        bam='bam/{sample}.bam',
+        idx=rules.index_bam.output
+    output:
+        'rseqc/{sample}_bam_qc.txt'
+    benchmark:
+        'benchmark/{sample}_bam_qc.tab'
+    log:
+        'log/{sample}_bam_qc.log'
+    conda:
+        SOURCEDIR+"/../envs/rseqc.yaml"
+    params:
+        sample='{sample}',
+        rseqdir=RSEQC,
+        srcdir=SOURCEDIR,
+        doencrypt=DOENCRYPT,
+        openssl=OPENSSL,
+        encrypt_pass=ENCRYPT_PASS,
+        hash=HASH,
+        doarchive=DOARCHIVE,
+        archive=ARCHIVE,
+        cloud=CLOUD
+    priority: 1
+    threads: 1
+    shell:
+        '''
+          echo "{params.rseqdir}bam_stat.py -i {input.bam} > {output}" | tee {log}
+          {params.rseqdir}bam_stat.py -i {input.bam} > {output} 2>> {log}
+
+          ## encrypt and archive if needed
+          python3 {params.srcdir}/python/init-encrypt-archive.py --src {params.srcdir}\
+          --doencrypt {params.doencrypt} --openssl {params.openssl} --encrypt-pass {params.encrypt_pass} --hash {params.hash} \
+          --doarchive {params.doarchive} --archive {params.archive} --cloud {params.cloud} \
+          --output {output} \
+          2>> {log}
+        '''
+
+
+
+## Run RSEQC read_gc.py
+rule bam_gc:
+    input:
+        bam='bam/{sample}.bam',
+        idx=rules.index_bam.output
+    output:
+        r='rseqc/{sample}.GC_plot.r',
+        txt='rseqc/{sample}_bam_gc.txt'
+    benchmark:
+        'benchmark/{sample}_bam_gc.tab'
+    log:
+        'log/{sample}_bam_gc.log'
+    conda:
+        SOURCEDIR+"/../envs/rseqc.yaml"
+    params:
+        sample='{sample}',
+        rseqdir=RSEQC,
+        srcdir=SOURCEDIR,
+        doencrypt=DOENCRYPT,
+        openssl=OPENSSL,
+        encrypt_pass=ENCRYPT_PASS,
+        hash=HASH,
+        doarchive=DOARCHIVE,
+        archive=ARCHIVE,
+        cloud=CLOUD
+    priority: 1
+    threads: 1
+    shell:
+      '''
+        echo "{params.rseqdir}read_GC.py -i {input.bam} -o rseqc/{params.sample}" | tee {log}
+        {params.rseqdir}read_GC.py -i {input.bam} -o rseqc/{params.sample} 2>> {log}
+
+        ## R script to get txt output info
+        echo "out=as.vector(summary(gc));dta = data.frame('{params.sample}',out[1],out[2],out[3],out[4],out[5],out[6]);write.table(dta,file='{output.txt}',sep="\t",row.names=F,col.names=F,quote=F);" >> {output.r}
+        Rscript --vanilla --quiet {output.r}
+
+        ## encrypt and archive if needed
+        python3 {params.srcdir}/python/init-encrypt-archive.py --src {params.srcdir}\
+        --doencrypt {params.doencrypt} --openssl {params.openssl} --encrypt-pass {params.encrypt_pass} --hash {params.hash} \
+        --doarchive {params.doarchive} --archive {params.archive} --cloud {params.cloud} \
+        --output {output.txt} \
+        2>> {log}
+
+        ## export rule env details
+        conda env export --no-builds > info/rseqc.info
+      '''
+
+
+
+### TODO add other important out files to output
+### Run CNV analysis with QDNAseq
+#rule cnv_analysis:
+#    input:
+#        bam='bam/{sample}.bam',
+#        idx=rules.index_bam.output
+#    output:
+#        'cnv/{sample}_cnv.bed'
+#    benchmark:
+#        'benchmark/{sample}_cnv_analysis.tab'
+#    log:
+#        'log/{sample}_cnv_analysis.log'
+#    conda:
+#        SOURCEDIR+"/../envs/cnv_analysis.yaml"
+#    params:
+#        sample='{sample}',
+#        predir=PREDIR,
+#        srcdir=SOURCEDIR,
+#        doencrypt=DOENCRYPT,
+#        openssl=OPENSSL,
+#        encrypt_pass=ENCRYPT_PASS,
+#        hash=HASH,
+#        doarchive=DOARCHIVE,
+#        archive=ARCHIVE,
+#        cloud=CLOUD
+#    priority: 4
+#    threads: 1
+#    shell:
+#        '''
+#          echo "Rscript --vanilla {params.srcdir}/r/init-qdnaseq-cnv-analysis.r {params.predir} {params.sample}" | tee {log}
+#          Rscript --vanilla {params.srcdir}/r/init-qdnaseq-cnv-analysis.r {params.predir} {params.sample} 2>> {log}
+#
+#          ## encrypt and archive if needed
+#          python3 {params.srcdir}/python/init-encrypt-archive.py --src {params.srcdir}\
+#          --doencrypt {params.doencrypt} --openssl {params.openssl} --encrypt-pass {params.encrypt_pass} --hash {params.hash} \
+#          --doarchive {params.doarchive} --archive {params.archive} --cloud {params.cloud} \
+#          --output {output} \
+#          2>> {log}
+#
+#          ## export rule env details
+#          conda env export --no-builds > info/cnv_analysis.info
+#        '''
+
+
+
+## TODO finalize - params based on SE/PE narrow/broad etc
+## Run peak calling with MACS
+rule call_peaks:
+    input:
+        bam='bam/{sample}.bam',
+        idx=rules.index_bam.output
+    output:
+        xls='peak/{sample}_peaks.xls',
+        mode='peak/{sample}_peaks.narrowPeak' if PEAK_MODE=='narrow' else 'peak/{sample}_peaks.broadPeak',
+        extra='peak/{sample}_summits.bed' if PEAK_MODE=='narrow' else 'peak/{sample}_peaks.gappedPeak'
+    benchmark:
+        'benchmark/{sample}_call_peaks.tab'
+    log:
+        'log/{sample}_call_peaks.log'
+    conda:
+        SOURCEDIR+"/../envs/call_peaks.yaml"
+    params:
+        sample='{sample}',
+        macs=MACS,
+        format='BAMPE' if len(ENDS)==2 else 'BAM',
+        genome='hs',
+        fdr=PEAK_FDR,
+        peak_mode_str=PEAK_MODE_STR,
+        output_joined=','.join(['peak/{sample}_peaks.xls','peak/{sample}_peaks.narrowPeak' if PEAK_MODE=='narrow' else 'peak/{sample}_peaks.broadPeak', 'peak/{sample}_summits.bed' if PEAK_MODE=='narrow' else 'peak/{sample}_peaks.gappedPeak']),
+        srcdir=SOURCEDIR,
+        doencrypt=DOENCRYPT,
+        openssl=OPENSSL,
+        encrypt_pass=ENCRYPT_PASS,
+        hash=HASH,
+        doarchive=DOARCHIVE,
+        archive=ARCHIVE,
+        cloud=CLOUD
+    priority: 1
+    threads: 1
+    shell:
+        '''
+          echo "{params.macs} callpeak -f {params.format} -g {params.genome} -t {input.bam} --outdir peak -n {params.sample} -q {params.fdr} {params.peak_mode_str}" | tee {log}
+          {params.macs} callpeak -f {params.format} -g {params.genome} -t {input.bam} --outdir peak -n {params.sample} -q {params.fdr} {params.peak_mode_str} 2>> {log}
+
+          ## encrypt and archive if needed
+          python3 {params.srcdir}/python/init-encrypt-archive.py --src {params.srcdir}\
+          --doencrypt {params.doencrypt} --openssl {params.openssl} --encrypt-pass {params.encrypt_pass} --hash {params.hash} \
+          --doarchive {params.doarchive} --archive {params.archive} --cloud {params.cloud} \
+          --output {params.output_joined} \
+          2>> {log}
+
+          ## export rule env details
+          conda env export --no-builds > info/call_peaks.info
+        '''
+
+
+
+## TODO add chipqc report as output
+## Get peak metrics per sample with ChIPQC
+rule chipqc:
+    input:
+        bam='bam/{sample}.bam',
+        idx=rules.index_bam.output,
+        peak='peak/{sample}_peaks.narrowPeak' if PEAK_MODE=='narrow' else 'peak/{sample}_peaks.broadPeak',
+    output:
+        'chipqc/{sample}_chipqc.csv.gz'
+    benchmark:
+        'benchmark/{sample}_chipqc.tab'
+    log:
+        'log/{sample}_chipqc.log'
+    conda:
+        SOURCEDIR+"/../envs/chipqc.yaml"
+    params:
+        sample='{sample}',
+        predir=PREDIR,
+        srcdir=SOURCEDIR,
+        doencrypt=DOENCRYPT,
+        openssl=OPENSSL,
+        encrypt_pass=ENCRYPT_PASS,
+        hash=HASH,
+        doarchive=DOARCHIVE,
+        archive=ARCHIVE,
+        cloud=CLOUD
+    priority: 1
+    threads: 1
+    shell:
+        '''
+          echo "Rscript --vanilla --quiet {params.srcdir}/r/init-chipqc-sample-peak-metrics.r {params.predir} {params.sample} {input.bam} {input.peak}" | tee {log}
+          Rscript --vanilla --quiet {params.srcdir}/r/init-chipqc-sample-peak-metrics.r {params.predir} {params.sample} {input.bam} {input.peak} 2>> {log}
+
+          ## encrypt and archive if needed
+          python3 {params.srcdir}/python/init-encrypt-archive.py --src {params.srcdir}\
+          --doencrypt {params.doencrypt} --openssl {params.openssl} --encrypt-pass {params.encrypt_pass} --hash {params.hash} \
+          --doarchive {params.doarchive} --archive {params.archive} --cloud {params.cloud} \
+          --output {output} \
+          2>> {log}
+
+          ## export rule env details
+          conda env export --no-builds > info/chipqc.info
+        '''
+
+
+
+### Get peak metrics across all samples and gen report with ChIPQC
+#rule chipqc:
+#    input:
+#        bam=expand('bam/{samid}.bam', samid=SAMID),
+#        idx=expand('bam/{samid}.bam.bai', samid=SAMID),
+#        peak=expand('peak/{samid}_peaks.narrowPeak', samid=SAMID) if PEAK_MODE=='narrow' else expand('peak/{samid}_peaks.broadPeak', samid=SAMID)
+#    output:
+#        csv='analysis/data/all_chipqc.csv.gz',
+#        report='analysis/report/all_samples_chipqc_report.html'
+#    benchmark:
+#        'benchmark/all_chipqc.tab'
+#    log:
+#        'log/all_chipqc.log'
+#    conda:
+#        SOURCEDIR+"/../envs/chipqc.yaml"
+#    params:
+#        sample='{sample}',
+#        predir=PREDIR,
+#        dtadir=DATADIR,
+#        mta='sample_metadata.csv',
+#        makereport='make-report',
+#        srcdir=SOURCEDIR,
+#        doencrypt=DOENCRYPT,
+#        openssl=OPENSSL,
+#        encrypt_pass=ENCRYPT_PASS,
+#        hash=HASH,
+#        doarchive=DOARCHIVE,
+#        archive=ARCHIVE,
+#        cloud=CLOUD
+#    priority: 1
+#    threads: 1
+#    shell:
+#        '''
+#          echo "Rscript --vanilla --quiet {params.srcdir}/r/init-chipqc-all-peak-metrics.r {params.predir} {params.dtadir} {params.mta} {params.makereport}" | tee {log}
+#          Rscript --vanilla --quiet {params.srcdir}/r/init-chipqc-all-peak-metrics.r {params.predir} {params.dtadir} {params.mta} {params.makereport} 2>> {log}
+#
+#          ## export rule env details
+#          conda env export --no-builds > info/chipqc.info
+#        '''

@@ -1,0 +1,12 @@
+name: rseqc
+channels:
+    - conda-forge
+    - bioconda
+dependencies:
+    - rseqc==5.0.1
+    - python==3.10.12
+    - snakemake
+    - r-base
+    - openssl
+    - gsutil
+    - awscli
