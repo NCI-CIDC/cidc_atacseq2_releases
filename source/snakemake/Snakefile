@@ -588,48 +588,48 @@ rule bam_gc:
 
 
 
-### TODO add other important out files to output
-### Run CNV analysis with QDNAseq
-#rule cnv_analysis:
-#    input:
-#        bam='bam/{sample}.bam',
-#        idx=rules.index_bam.output
-#    output:
-#        'cnv/{sample}_cnv.bed'
-#    benchmark:
-#        'benchmark/{sample}_cnv_analysis.tab'
-#    log:
-#        'log/{sample}_cnv_analysis.log'
-#    conda:
-#        SOURCEDIR+"/../envs/cnv_analysis.yaml"
-#    params:
-#        sample='{sample}',
-#        predir=PREDIR,
-#        srcdir=SOURCEDIR,
-#        doencrypt=DOENCRYPT,
-#        openssl=OPENSSL,
-#        encrypt_pass=ENCRYPT_PASS,
-#        hash=HASH,
-#        doarchive=DOARCHIVE,
-#        archive=ARCHIVE,
-#        cloud=CLOUD
-#    priority: 4
-#    threads: 1
-#    shell:
-#        '''
-#          echo "Rscript --vanilla {params.srcdir}/r/init-qdnaseq-cnv-analysis.r {params.predir} {params.sample}" | tee {log}
-#          Rscript --vanilla {params.srcdir}/r/init-qdnaseq-cnv-analysis.r {params.predir} {params.sample} 2>> {log}
-#
-#          ## encrypt and archive if needed
-#          python3 {params.srcdir}/python/init-encrypt-archive.py --src {params.srcdir}\
-#          --doencrypt {params.doencrypt} --openssl {params.openssl} --encrypt-pass {params.encrypt_pass} --hash {params.hash} \
-#          --doarchive {params.doarchive} --archive {params.archive} --cloud {params.cloud} \
-#          --output {output} \
-#          2>> {log}
-#
-#          ## export rule env details
-#          conda env export --no-builds > info/cnv_analysis.info
-#        '''
+## TODO add other important out files to output
+## Run CNV analysis with QDNAseq
+rule cnv_analysis:
+   input:
+       bam='bam/{sample}.bam',
+       idx=rules.index_bam.output
+   output:
+       'cnv/{sample}_cnv.bed'
+   benchmark:
+       'benchmark/{sample}_cnv_analysis.tab'
+   log:
+       'log/{sample}_cnv_analysis.log'
+   conda:
+       SOURCEDIR+"/../envs/cnv_analysis.yaml"
+   params:
+       sample='{sample}',
+       predir=PREDIR,
+       srcdir=SOURCEDIR,
+       doencrypt=DOENCRYPT,
+       openssl=OPENSSL,
+       encrypt_pass=ENCRYPT_PASS,
+       hash=HASH,
+       doarchive=DOARCHIVE,
+       archive=ARCHIVE,
+       cloud=CLOUD
+   priority: 1
+   threads: 1
+   shell:
+       '''
+         echo "Rscript --vanilla {params.srcdir}/r/init-qdnaseq-cnv-analysis.r {params.predir} {params.sample}" | tee {log}
+         Rscript --vanilla {params.srcdir}/r/init-qdnaseq-cnv-analysis.r {params.predir} {params.sample} 2>> {log}
+
+         ## encrypt and archive if needed
+         python3 {params.srcdir}/python/init-encrypt-archive.py --src {params.srcdir}\
+         --doencrypt {params.doencrypt} --openssl {params.openssl} --encrypt-pass {params.encrypt_pass} --hash {params.hash} \
+         --doarchive {params.doarchive} --archive {params.archive} --cloud {params.cloud} \
+         --output {output} \
+         2>> {log}
+
+         ## export rule env details
+         conda env export --no-builds > info/cnv_analysis.info
+       '''
 
 
 
