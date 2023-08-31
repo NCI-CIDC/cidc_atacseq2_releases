@@ -1,9 +1,11 @@
 # cidc_atac
 
-*ATAC-seq data processing pipeline. This framework is currently
+*ATAC-seq data processing pipeline* 
+
+*This framework is currently
 set up to perform the following across sample files: read pre-processing (adapter trimming and quality filtering), read QC, reference
 genome alignment, obtaining alignment metrics, CNV analysis, peak calling with MACS using settings optimal for detection of chromatin-accessibility signatures, peak QC and quantification with ChIPQC. 
-Currently basic report is output containing some alignment and peak metrics using ChIPQC's builtin reporting feature.*
+Currently a basic report is output containing some alignment and peak metrics using ChIPQC's builtin reporting feature.*
 
 ## Software
 * See SOFTWARE.xlsx to see more info on required base software
