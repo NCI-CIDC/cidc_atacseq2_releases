@@ -4,3 +4,9 @@ channels:
     - bioconda
 dependencies:
     - bwa==0.7.17
+    - samtools
+    - python==3.10.12
+    - snakemake
+    - openssl
+    - gsutil
+    - awscli
