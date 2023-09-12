@@ -1,0 +1,9 @@
+name: cidc_atac
+channels:
+- conda-forge
+- bioconda
+- defaults
+dependencies:
+- pandas ==1.0.5
+- python-box ==4.2.3
+- snakemake ==5.19.3
