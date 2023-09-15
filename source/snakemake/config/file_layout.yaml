@@ -1,9 +1,44 @@
 configuration_capture:
+    preprocessing: "preprocess_config.csv"
+    analysis: "analysis_config.csv"
+    environments: "environments_info.csv"
+
+reference:
+    fa: "{refgenomeID}.fa"
+    fai: "{refgenomeID}.fa.fai"
+    bwt: "{refgenomeID}.fa.bwt"
 
 init:
+    input_fastq: "input/{sample}_{read}.fastq.gz"
 
 preprocessing:
+    cutadapt_fastq: "cutadapt/{sample}_{read}.fastq.gz"
+    trimm_fastq: "rqual_filter/{sample}_{read}{paired}_qual.fastq.gz"
+    fastqc: "fastqc/{sample}_fastqc.tar.gz"
+
+align:
+    bam: "bam/{sample}.bam"
+    bam_index: "bam/{sample}.bam.bai"
+    bamqc: "rseqc/{sample}_bam_qc.txt"
+    bamgc: "rseqc/{sample}_bam_gc.txt"
+
+peaks:
+    xls: "peak/{sample}_peaks.xls"
+    peak: "peak/{sample}_peaks.{mode}Peak"
+    extra:
+        narrow: "peak/{sample}_summits.bed"
+        broad: "peak/{sample}_peaks.gappedPeak"
+
+chipqc:
+    csv: "chipqc/{sample}_chipqc.csv"
 
 analysis:
+    ceas: "analysis/ceas/{sample}_peak_annot.csv"
+    gene_target: "analysis/gene_target/{sample}_gene_target.csv"
+    motif: "analysis/motif/{sample}_homer.csv"
+    conservation: "analysis/conserv/{sample}_conserv.csv"
 
 reporting:
+    html: "report/{submissionID}_cidc_atac_report.html"
+    fig: ...
+    tab: ...
