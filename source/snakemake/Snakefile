@@ -13,7 +13,7 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #
 #
-# Program:  Snakefile.sh
+# Program:  Snakefile
 # Version:  0.1
 # Author:   Sami R. Cherikh, Travis L. Jensen
 # Purpose:  Main snakefile for workflow template. Performs alignment of sample fastq files
