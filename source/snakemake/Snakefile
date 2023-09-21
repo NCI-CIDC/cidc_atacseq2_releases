@@ -16,7 +16,7 @@
 # Program:  Snakefile
 # Version:  0.1
 # Author:   Sami R. Cherikh, Travis L. Jensen
-# Purpose:  Main snakefile for workflow template. Performs alignment of sample fastq files
+# Purpose:  Main snakefile for workflow template.
 # Input:    Sample fastq files stored in a cloud location (google cloud, aws)
 # Output:   'sample_metadata.csv','rseqc/bam_qc_parsed.tab', 'rseqc/bam_gc_parsed.tab'
 #############################################################################################################
@@ -26,13 +26,18 @@ import shutil
 import logging as _logging
 import psutil
 import os
-
+from pathlib import Path
 
 ##############################
 #       CONFIGURATION        #
 ##############################
 ## Specify YAML config file location
 configfile: "preprocess_config.yaml"
+
+include: "rules/common.smk"
+
+## create file accessor
+paths = create_path_accessor()
 
 ## Directories
 ## source dir

@@ -42,3 +42,9 @@ reporting:
     html: "report/{submissionID}_cidc_atac_report.html"
     fig: ...
     tab: ...
+
+benchmarks:
+
+
+logs:
+   getfile: "log/{sample}_getfile.log"
