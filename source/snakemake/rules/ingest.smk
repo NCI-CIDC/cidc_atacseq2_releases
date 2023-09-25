@@ -4,7 +4,7 @@ rule getfile:
         rules.directory_setup.output,
         rules.build_bwa_index.output
     output:
-        temp(expand('input/{{sample}}_{pe}.fastq.gz',  pe=ENDS))
+        paths.ingest.input_fastq
     benchmark:
         'benchmark/{sample}_getfile.tab'
     log:
@@ -47,9 +47,9 @@ rule getfile:
 ### Optionally trim adapters with cutadapt
 rule trimadapters:
     input:
-        fa=expand('input/{{sample}}_{pe}.fastq.gz',  pe=ENDS)
+        fa=rules.getfile.output
     output:
-        temp([x + TRIM_ADAPTERS_OUTPUT for x in expand('cutadapt/{{sample}}_{pe}', pe=ENDS)])
+        temp(paths.ingest.cutadapt_fastq)
     benchmark:
         'benchmark/{sample}_trimadapters.tab'
     log:
@@ -89,9 +89,9 @@ rule trimadapters:
 ## Optionally quality-trim reads with Trimmomatic
 rule qualityfilter:
     input:
-        rules.trimadapters.output if TRIM_FP or TRIM_TP else expand('input/{{sample}}_{pe}.fastq.gz',  pe=ENDS)
+        rules.trimadapters.output if TRIM_FP or TRIM_TP else rules.getfile.output
     output:
-        temp(expand('rqual_filter/{{sample}}_{pe}{paired}_qual.fastq.gz', pe=ENDS, paired=['P','U'])) if len(ENDS)==2 else temp(expand('rqual_filter/{{sample}}_{pe}_qual.fastq.gz', pe=ENDS))
+        temp(paths.ingest.trimm_fastq.paired) if len(ENDS)==2 else temp(paths.ingest.trimm_fastq.single)
     benchmark:
         'benchmark/{sample}_qualityfilter.tab'
     log:
