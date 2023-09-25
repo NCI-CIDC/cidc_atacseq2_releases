@@ -56,6 +56,6 @@ res.sample = res.sample[,c(ncol(res.sample),1:(ncol(res.sample)-1))]
 
 ## write out sample results
 write.table(res.sample, paste0(predir,'/chipqc/',sample,'_chipqc.csv'), sep=',', quote=F, row.names=F, col.names=T)
-system(paste0('gzip ',predir,'/chipqc/',sample,'_chipqc.csv'))
+#system(paste0('gzip ',predir,'/chipqc/',sample,'_chipqc.csv'))
 
 
