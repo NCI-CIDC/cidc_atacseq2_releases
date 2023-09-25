@@ -2,10 +2,10 @@
 ## Run CNV analysis with QDNAseq
 rule cnv_analysis:
    input:
-       bam='bam/{sample}.bam',
+       bam=rules.run_bwa.output,
        idx=rules.index_bam.output
    output:
-       'cnv/{sample}_cnv.bed'
+       paths.analysis.cnv
    benchmark:
        'benchmark/{sample}_cnv_analysis.tab'
    log:
@@ -45,12 +45,12 @@ rule cnv_analysis:
 ## Run peak calling with MACS
 rule call_peaks:
     input:
-        bam='bam/{sample}.bam',
+        bam=rules.run_bwa.output,
         idx=rules.index_bam.output
     output:
-        xls='peak/{sample}_peaks.xls',
-        mode='peak/{sample}_peaks.narrowPeak' if PEAK_MODE=='narrow' else 'peak/{sample}_peaks.broadPeak',
-        extra='peak/{sample}_summits.bed' if PEAK_MODE=='narrow' else 'peak/{sample}_peaks.gappedPeak'
+        xls=paths.peaks.xls,
+        peak=paths.peaks.peak,
+        extra=paths.peaks.extra.narrow if PEAK_MODE=='narrow' else paths.peaks.extra.broad
     benchmark:
         'benchmark/{sample}_call_peaks.tab'
     log:
@@ -91,15 +91,15 @@ rule call_peaks:
           ## export rule env details
           conda env export --no-builds > info/call_peaks.info
         '''
-## TODO add chipqc report as output
+
 ## Get peak metrics per sample with ChIPQC
 rule chipqc:
     input:
-        bam='bam/{sample}.bam',
+        bam=rules.run_bwa.output,
         idx=rules.index_bam.output,
-        peak='peak/{sample}_peaks.narrowPeak' if PEAK_MODE=='narrow' else 'peak/{sample}_peaks.broadPeak',
+        peak=rules.call_peaks.output.peak,
     output:
-        'chipqc/{sample}_chipqc.csv.gz'
+        paths.chipqc.csv
     benchmark:
         'benchmark/{sample}_chipqc.tab'
     log:
