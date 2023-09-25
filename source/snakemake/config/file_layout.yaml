@@ -15,11 +15,14 @@ ingest:
         paired: "rqual_filter/{sample}_{read}{paired}_qual.fastq.gz"
         single: "rqual_filter/{sample}_{read}_qual.fastq.gz"
 
-align:
+mapping:
     bam: "bam/{sample}.bam"
     bam_index: "bam/{sample}.bam.bai"
+    fastqc: "fastqc/{sample}_fastqc.tar.gz"
     bamqc: "rseqc/{sample}_bam_qc.txt"
-    bamgc: "rseqc/{sample}_bam_gc.txt"
+    bamgc:
+        txt: "rseqc/{sample}_bam_gc.txt"
+        r: "rseqc/{sample}.GC_plot.r"
 
 peaks:
     xls: "peak/{sample}_peaks.xls"
