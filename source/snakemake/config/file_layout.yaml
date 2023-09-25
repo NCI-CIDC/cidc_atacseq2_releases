@@ -35,6 +35,7 @@ chipqc:
     csv: "chipqc/{sample}_chipqc.csv"
 
 analysis:
+    cnv: "analysis/cnv/{sample}_cnv.bed"
     ceas: "analysis/ceas/{sample}_peak_annot.csv"
     gene_target: "analysis/gene_target/{sample}_gene_target.csv"
     motif: "analysis/motif/{sample}_homer.csv"
