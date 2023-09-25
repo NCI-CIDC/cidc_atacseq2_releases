@@ -8,13 +8,12 @@ reference:
     fai: "{refgenomeID}.fa.fai"
     bwt: "{refgenomeID}.fa.bwt"
 
-init:
+ingest:
     input_fastq: "input/{sample}_{read}.fastq.gz"
-
-preprocessing:
     cutadapt_fastq: "cutadapt/{sample}_{read}.fastq.gz"
-    trimm_fastq: "rqual_filter/{sample}_{read}{paired}_qual.fastq.gz"
-    fastqc: "fastqc/{sample}_fastqc.tar.gz"
+    trimm_fastq:
+        paired: "rqual_filter/{sample}_{read}{paired}_qual.fastq.gz"
+        single: "rqual_filter/{sample}_{read}_qual.fastq.gz"
 
 align:
     bam: "bam/{sample}.bam"
