@@ -26,7 +26,7 @@ rule build_bwa_index:
     conda:
         "./envs/bwa.yaml"
     params:
-        indexseq=INDEXSEQ
+        indexseq=paths.reference.fa
     priority: 1000
     threads: max(1,NCORES)
     shell:
