@@ -4,7 +4,7 @@ rule run_bwa:
         tch=rules.build_bwa_index.output,
         fa=rules.qualityfilter.output
     output:
-        'bam/{sample}.bam'
+        paths.mapping.bam
     benchmark:
         'benchmark/{sample}_run_bwa.tab'
     log:
@@ -35,9 +35,9 @@ rule run_bwa:
 ## Index BAM
 rule index_bam:
     input:
-        bam='bam/{sample}.bam'
+        bam=rules.run_bwa.output
     output:
-        'bam/{sample}.bam.bai'
+        paths.mapping.bam_index
     benchmark:
         'benchmark/{sample}_index_bam.tab'
     log:
@@ -57,9 +57,9 @@ rule index_bam:
 ## Run FASTQC
 rule fastqc:
     input:
-        'bam/{sample}.bam'
+        rules.run_bwa.output
     output:
-        temp('fastqc/{sample}_fastqc.tar.gz')
+        temp(paths.mapping.fastqc)
     benchmark:
         'benchmark/{sample}_fastqc.tab'
     log:
@@ -104,10 +104,10 @@ rule fastqc:
 ## Run RSEQC bam_stat.py
 rule bam_qc:
     input:
-        bam='bam/{sample}.bam',
+        bam=rules.run_bwa.output,
         idx=rules.index_bam.output
     output:
-        'rseqc/{sample}_bam_qc.txt'
+        paths.mapping.bamqc
     benchmark:
         'benchmark/{sample}_bam_qc.tab'
     log:
@@ -144,11 +144,11 @@ rule bam_qc:
 ## Run RSEQC read_gc.py
 rule bam_gc:
     input:
-        bam='bam/{sample}.bam',
+        bam=rules.run_bwa.output,
         idx=rules.index_bam.output
     output:
-        r='rseqc/{sample}.GC_plot.r',
-        txt='rseqc/{sample}_bam_gc.txt'
+        r=paths.mapping.bamgc.r,
+        txt=paths.mapping.bamgc.txt
     benchmark:
         'benchmark/{sample}_bam_gc.tab'
     log:
