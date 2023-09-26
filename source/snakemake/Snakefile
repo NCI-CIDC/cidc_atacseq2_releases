@@ -177,7 +177,7 @@ _logging.basicConfig(level=LOG_LEVEL,
 OUTPUT = [expand('rseqc/{sample}_bam_qc.txt', sample=SAMID),
           expand('rseqc/{sample}_bam_gc.txt', sample=SAMID),
           expand('peak/{sample}_peaks.xls', sample=SAMID),
-           expand('chipqc/{sample}_chipqc.csv.gz', sample=SAMID)]
+           expand('chipqc/{sample}_chipqc.csv', sample=SAMID)]
 if RUN_FASTQC == 1:
     OUTPUT.append(expand('fastqc/{sample}_fastqc.tar.gz', sample=SAMID))
 

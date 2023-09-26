@@ -8,19 +8,21 @@ reference:
     fai: "{refgenomeID}.fa.fai"
     bwt: "{refgenomeID}.fa.bwt"
 
-init:
+ingest:
     input_fastq: "input/{sample}_{read}.fastq.gz"
-
-preprocessing:
     cutadapt_fastq: "cutadapt/{sample}_{read}.fastq.gz"
-    trimm_fastq: "rqual_filter/{sample}_{read}{paired}_qual.fastq.gz"
-    fastqc: "fastqc/{sample}_fastqc.tar.gz"
+    trimm_fastq:
+        paired: "rqual_filter/{sample}_{read}{paired}_qual.fastq.gz"
+        single: "rqual_filter/{sample}_{read}_qual.fastq.gz"
 
-align:
+mapping:
     bam: "bam/{sample}.bam"
     bam_index: "bam/{sample}.bam.bai"
+    fastqc: "fastqc/{sample}_fastqc.tar.gz"
     bamqc: "rseqc/{sample}_bam_qc.txt"
-    bamgc: "rseqc/{sample}_bam_gc.txt"
+    bamgc:
+        txt: "rseqc/{sample}_bam_gc.txt"
+        r: "rseqc/{sample}.GC_plot.r"
 
 peaks:
     xls: "peak/{sample}_peaks.xls"
@@ -33,6 +35,7 @@ chipqc:
     csv: "chipqc/{sample}_chipqc.csv"
 
 analysis:
+    cnv: "analysis/cnv/{sample}_cnv.bed"
     ceas: "analysis/ceas/{sample}_peak_annot.csv"
     gene_target: "analysis/gene_target/{sample}_gene_target.csv"
     motif: "analysis/motif/{sample}_homer.csv"
