@@ -27,17 +27,14 @@ import logging as _logging
 import psutil
 import os
 from pathlib import Path
+from box import Box
+import yaml
 
 ##############################
 #       CONFIGURATION        #
 ##############################
 ## Specify YAML config file location
 configfile: "preprocess_config.yaml"
-
-include: "rules/common.smk"
-
-## create file accessor
-paths = create_path_accessor()
 
 ## Directories
 ## source dir
@@ -47,7 +44,24 @@ PREDIR     = config["predir"]
 ## analysis data results dir
 DATADIR       = config["datadir"]
 
-## Program locations
+
+#include: "./rules/common.smk"
+def create_path_accessor(prefix: Path = Path(PREDIR)) -> Box:
+    """Create a Box to provide '.' access to hierarchy of paths"""
+    data = yaml.load(Path(config["file_layout"]).open(), Loader=yaml.SafeLoader)
+    paths = {}
+    for directory in data.keys():
+        paths[directory] = {}
+        for file_alias, file_name in data[directory].items():
+            p = str(prefix / directory / file_name)
+            paths[directory][file_alias] = str(p)
+    return Box(paths, frozen_box=True)
+
+## create file accessor
+paths = create_path_accessor()
+
+
+## Program names/locations
 CLOUD        = config["cloud_prog"]
 OPENSSL      = config["openssl_prog"]
 CUTADAPT     = config["cutadapt_prog"]
@@ -174,12 +188,13 @@ _logging.basicConfig(level=LOG_LEVEL,
 ################################
 #     DEFINE TARGET OUTPUT     #
 ################################
-OUTPUT = [expand('rseqc/{sample}_bam_qc.txt', sample=SAMID),
-          expand('rseqc/{sample}_bam_gc.txt', sample=SAMID),
-          expand('peak/{sample}_peaks.xls', sample=SAMID),
-           expand('chipqc/{sample}_chipqc.csv', sample=SAMID)]
+OUTPUT = [expand(paths.rseqc.bamqc_txt, sample=SAMID),
+          expand(paths.rseqc.bamgc_txt, sample=SAMID),
+          expand(paths.cnv.bed, sample=SAMID),
+          expand(paths.peak.xls, sample=SAMID),
+           expand(paths.chipqc.csv, sample=SAMID)]
 if RUN_FASTQC == 1:
-    OUTPUT.append(expand('fastqc/{sample}_fastqc.tar.gz', sample=SAMID))
+    OUTPUT.append(expand(paths.fastqc.targz, sample=SAMID))
 
 
 
@@ -223,8 +238,6 @@ rule all:
 ################################
 #        PIPELINE RULES        #
 ################################
-
-include: "./rules/common.smk"
 include: "./rules/initialization.smk"
 include: "./rules/ingest.smk"
 include: "./rules/mapping.smk"
