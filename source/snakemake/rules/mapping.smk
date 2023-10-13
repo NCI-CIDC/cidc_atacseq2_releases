@@ -4,19 +4,25 @@ rule run_bwa:
         tch=rules.build_bwa_index.output,
         fa=rules.qualityfilter.output
     output:
-        paths.mapping.bam
+        paths.bam.bam
     benchmark:
         'benchmark/{sample}_run_bwa.tab'
     log:
         'log/{sample}_run_bwa.log'
     conda:
-        SOURCEDIR + "/../envs/bwa.yaml"
+        SOURCEDIR+"/../envs/bwa.yaml"
     params:
         sample='{sample}',
         indexseq=INDEXSEQ,
-        in_fa_str=expand('rqual_filter/{{sample}}_{pe}{paired}_qual.fastq.gz',pe=ENDS,paired=['P', 'U'])[0] + ' ' +
-                  expand('rqual_filter/{{sample}}_{pe}{paired}_qual.fastq.gz',pe=ENDS,paired=['P', 'U'])[
-                      2] if len(ENDS) == 2 else expand('rqual_filter/{{sample}}_{pe}_qual.fastq.gz',pe=ENDS)[0]
+        in_fa_str=expand('rqual_filter/{{sample}}_{pe}{paired}_qual.fastq.gz',pe=ENDS,paired=['P', 'U'])[0] + ' ' + expand('rqual_filter/{{sample}}_{pe}{paired}_qual.fastq.gz',pe=ENDS,paired=['P', 'U'])[2] if len(ENDS) == 2 else expand('rqual_filter/{{sample}}_{pe}_qual.fastq.gz',pe=ENDS)[0],
+        srcdir=SOURCEDIR,
+        doencrypt=DOENCRYPT,
+        openssl=OPENSSL,
+        encrypt_pass=ENCRYPT_PASS,
+        hash=HASH,
+        doarchive=DOARCHIVE,
+        archive=ARCHIVE,
+        cloud=CLOUD
     priority: 4
     threads: max(1,min(8,NCORES))
     shell:
@@ -37,7 +43,7 @@ rule index_bam:
     input:
         bam=rules.run_bwa.output
     output:
-        paths.mapping.bam_index
+        paths.bam.index
     benchmark:
         'benchmark/{sample}_index_bam.tab'
     log:
@@ -59,7 +65,7 @@ rule fastqc:
     input:
         rules.run_bwa.output
     output:
-        temp(paths.mapping.fastqc)
+        temp(paths.fastqc.targz)
     benchmark:
         'benchmark/{sample}_fastqc.tab'
     log:
@@ -107,7 +113,7 @@ rule bam_qc:
         bam=rules.run_bwa.output,
         idx=rules.index_bam.output
     output:
-        paths.mapping.bamqc
+        paths.rseqc.bamqc_txt
     benchmark:
         'benchmark/{sample}_bam_qc.tab'
     log:
@@ -147,8 +153,8 @@ rule bam_gc:
         bam=rules.run_bwa.output,
         idx=rules.index_bam.output
     output:
-        r=paths.mapping.bamgc.r,
-        txt=paths.mapping.bamgc.txt
+        r=paths.rseqc.bamgc_r,
+        txt=paths.rseqc.bamgc_txt
     benchmark:
         'benchmark/{sample}_bam_gc.tab'
     log:
