@@ -24,9 +24,9 @@ rule build_bwa_index:
     log:
         'log/build_bwa_index.log'
     conda:
-        "./envs/bwa.yaml"
+        SOURCEDIR+"/../envs/bwa.yaml"
     params:
-        indexseq=paths.reference.fa
+        indexseq=paths.genome.fa
     priority: 1000
     threads: max(1,NCORES)
     shell:

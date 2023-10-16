@@ -4,7 +4,7 @@ rule getfile:
         rules.directory_setup.output,
         rules.build_bwa_index.output
     output:
-        paths.ingest.input_fastq
+        temp(expand(paths.input.input_fastq, read=ENDS))
     benchmark:
         'benchmark/{sample}_getfile.tab'
     log:
@@ -49,13 +49,13 @@ rule trimadapters:
     input:
         fa=rules.getfile.output
     output:
-        temp(paths.ingest.cutadapt_fastq)
+        temp([x + TRIM_ADAPTERS_OUTPUT for x in expand(paths.cutadapt.cutadapt_fastq, read=ENDS)])
     benchmark:
         'benchmark/{sample}_trimadapters.tab'
     log:
         'log/{sample}_trimadapters.log'
     conda:
-        "./envs/trimadapters.yaml"
+         SOURCEDIR+"/../envs/trimadpaters.yaml"
     params:
         sample='{sample}',
         srcdir=SOURCEDIR,
@@ -91,7 +91,7 @@ rule qualityfilter:
     input:
         rules.trimadapters.output if TRIM_FP or TRIM_TP else rules.getfile.output
     output:
-        temp(paths.ingest.trimm_fastq.paired) if len(ENDS)==2 else temp(paths.ingest.trimm_fastq.single)
+        temp(expand(paths.rqual_filter.qfilter_fastq_paired, read=ENDS, paired=['P','U'])) if len(ENDS)==2 else temp(expand(paths.rqual_filter.qfilter_fastq_single), read=ENDS)
     benchmark:
         'benchmark/{sample}_qualityfilter.tab'
     log:

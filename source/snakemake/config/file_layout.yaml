@@ -1,53 +1,64 @@
-configuration_capture:
-    preprocessing: "preprocess_config.csv"
-    analysis: "analysis_config.csv"
-    environments: "environments_info.csv"
+## INITIALIZE
+genome:
+    fa: "Homo_sapiens.ensembl.version110.genome.fa"
+    bwt: "Homo_sapiens.ensembl.version110.genome.fa.bwt"
+annot:
+    gtf: "Homo_sapiens.ensembl.version110.chr.gtf"
 
-reference:
-    fa: "{refgenomeID}.fa"
-    fai: "{refgenomeID}.fa.fai"
-    bwt: "{refgenomeID}.fa.bwt"
 
-ingest:
-    input_fastq: "input/{sample}_{read}.fastq.gz"
-    cutadapt_fastq: "cutadapt/{sample}_{read}.fastq.gz"
-    trimm_fastq:
-        paired: "rqual_filter/{sample}_{read}{paired}_qual.fastq.gz"
-        single: "rqual_filter/{sample}_{read}_qual.fastq.gz"
+## INGEST
+input:
+    input_fastq: "{{sample}}_{read}.fastq.gz"
+cutadapt:
+    cutadapt_fastq: "{{sample}}_{read}"
+rqual_filter:
+    qfilter_fastq_single: "{{sample}}_{read}_qual.fastq.gz"
+    qfilter_fastq_paired: "{{sample}}_{read}{paired}_qual.fastq.gz"
 
-mapping:
-    bam: "bam/{sample}.bam"
-    bam_index: "bam/{sample}.bam.bai"
-    fastqc: "fastqc/{sample}_fastqc.tar.gz"
-    bamqc: "rseqc/{sample}_bam_qc.txt"
-    bamgc:
-        txt: "rseqc/{sample}_bam_gc.txt"
-        r: "rseqc/{sample}.GC_plot.r"
 
-peaks:
-    xls: "peak/{sample}_peaks.xls"
-    peak: "peak/{sample}_peaks.{mode}Peak"
-    extra:
-        narrow: "peak/{sample}_summits.bed"
-        broad: "peak/{sample}_peaks.gappedPeak"
+## MAPPING
+bam:
+    bam: "{sample}.bam"
+    index: "{sample}.bam.bai"
+
+rseqc:
+    bamqc_txt: "{sample}_bam_qc.txt"
+    bamgc_txt: "{sample}_bam_gc.txt"
+    bamgc_r: "{sample}.GC_plot.r"
+
+fastqc:
+    targz: "{sample}_fastqc.tar.gz"
+
+
+## ANALYSIS
+cnv:
+    bed: "{sample}_cnv.bed"
+
+peak:
+    xls: "{sample}_peaks.xls"
+    peak_narrow: "{sample}_peaks.narrowPeak"
+    peak_broad: "{sample}_peaks.broadPeak"
+    extra_narrow: "{sample}_summits.bed"
+    extra_broad: "{sample}_peaks.gappedPeak"
 
 chipqc:
-    csv: "chipqc/{sample}_chipqc.csv"
-
-analysis:
-    cnv: "analysis/cnv/{sample}_cnv.bed"
-    ceas: "analysis/ceas/{sample}_peak_annot.csv"
-    gene_target: "analysis/gene_target/{sample}_gene_target.csv"
-    motif: "analysis/motif/{sample}_homer.csv"
-    conservation: "analysis/conserv/{sample}_conserv.csv"
-
-reporting:
-    html: "report/{submissionID}_cidc_atac_report.html"
-    fig: ...
-    tab: ...
-
-benchmarks:
+    csv: "{sample}_chipqc.csv"
 
 
-logs:
-   getfile: "log/{sample}_getfile.log"
+## DOWNSTREAM ANALYSIS ## TODO
+#ceas:
+#    csv: "{sample}_peak_annot.csv"
+#gene_target:
+#    csv: "{sample}_gene_target.csv"
+#motif:
+#    csv: "{sample}_homer.csv"
+#conservation:
+#    csv: "{sample}_conserv.csv"
+
+
+## REPORT ## TODO
+#report:
+#    html: "{submissionID}_cidc_atac_report.html"
+#    fig:
+#    tab:
+

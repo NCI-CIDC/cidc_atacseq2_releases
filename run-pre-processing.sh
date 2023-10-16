@@ -33,8 +33,9 @@ SRCDIR="$(cd `dirname $0` && pwd)/source";
 
 ## Pass command line arguments to python program that calls snakemake
 #python3 $SRCDIR/python/init-workflow --run-preprocessing $@ --config <path-to-config-file> --threads <vCPU-cores-dedicated-to-pipeline>
+python3 $SRCDIR/python/init-workflow --run-preprocessing $@ --config $SRCDIR/../config/config-sra-test-subset.xlsx --threads 16 --continue-run
 
 ## Example command using the test config file with args that are useful when testing or debugging
-python3 $SRCDIR/python/init-workflow --run-preprocessing $@ --config $SRCDIR/../config/config-sra-test.xlsx --threads 16 --continue-run
+#python3 $SRCDIR/python/init-workflow --run-preprocessing $@ --config $SRCDIR/../config/config-sra-test-subset.xlsx --threads 16 --save-int-local-files --continue-run --dryrun
 
 

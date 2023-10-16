@@ -208,6 +208,8 @@ if (is.na(workflow.config.yaml[['quality_trim']])) {
 	stop("Quality trimming value specified is outside allowed range: ", workflow.config.yaml[['quality_trim']])
 }
 
+## add file_layout to preprocess config
+workflow.config.yaml[['file_layout']]  = paste0(source.dir,'/snakemake/config/file_layout.yaml')
 
 ## write out preprocessing config in YAML
 sink(paste(pre.dir,'preprocess_config.yaml',sep='/'))
