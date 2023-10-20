@@ -23,7 +23,7 @@ rule getfile:
         openssl=OPENSSL,
         decrypt_pass=DECRYPT_PASS,
         hash=HASH,
-        output_joined=','.join(expand('input/{{sample}}_{pe}.fastq.gz',  pe=ENDS))
+        output_joined=','.join(expand(paths.input.input_fastq, read=ENDS))
     priority: 2
     threads: max(1,min(8,NCORES))
     shell:
@@ -65,8 +65,8 @@ rule trimadapters:
         fp_adapters=','.join(FP_ADAPTERS),
         tp_adapters=','.join(TP_ADAPTERS),
         cutadapt=CUTADAPT,
-        input_joined=','.join(expand('input/{{sample}}_{pe}.fastq.gz',  pe=ENDS)),
-        output_joined=','.join([x + TRIM_ADAPTERS_OUTPUT for x in expand('cutadapt/{{sample}}_{pe}', pe=ENDS)])
+        input_joined=','.join(expand(paths.input.input_fastq, read=ENDS)),
+        output_joined=','.join([x + TRIM_ADAPTERS_OUTPUT for x in expand(paths.cutadapt.cutadapt_fastq, read=ENDS)])
     priority: 3
     threads: max(1,min(8,NCORES))
     shell:
@@ -91,7 +91,7 @@ rule qualityfilter:
     input:
         rules.trimadapters.output if TRIM_FP or TRIM_TP else rules.getfile.output
     output:
-        temp(expand(paths.rqual_filter.qfilter_fastq_paired, read=ENDS, paired=['P','U'])) if len(ENDS)==2 else temp(expand(paths.rqual_filter.qfilter_fastq_single), read=ENDS)
+        temp(expand(paths.rqual_filter.qfilter_fastq_paired, read=ENDS, paired=['P','U'])) if len(ENDS)==2 else temp(expand(paths.rqual_filter.qfilter_fastq_single, read=ENDS))
     benchmark:
         'benchmark/{sample}_qualityfilter.tab'
     log:
@@ -104,8 +104,8 @@ rule qualityfilter:
         ends=','.join(ENDS),
         trimmomatic=TRIMMOMATIC,
         qual_cutoff=QUAL_CUTOFF,
-        input_joined=','.join([x + TRIM_ADAPTERS_OUTPUT for x in expand('cutadapt/{{sample}}_{pe}', pe=ENDS)] if TRIM_FP or TRIM_TP else expand('input/{{sample}}_{pe}.fastq.gz',  pe=ENDS)),
-        output_joined=','.join(expand('rqual_filter/{{sample}}_{pe}{paired}_qual.fastq.gz', pe=ENDS, paired=['P','U']) if len(ENDS)==2 else expand('rqual_filter/{{sample}}_{pe}_qual.fastq.gz', pe=ENDS))
+        input_joined=','.join([x + TRIM_ADAPTERS_OUTPUT for x in expand(paths.cutadapt.cutadapt_fastq, read=ENDS)] if TRIM_FP or TRIM_TP else expand(paths.input.input_fastq, read=ENDS)),
+        output_joined=','.join(expand(paths.rqual_filter.qfilter_fastq_paired, read=ENDS, paired=['P','U']) if len(ENDS)==2 else expand(paths.rqual_filter.qfilter_fastq_single, read=ENDS))
     priority: 3
     threads: max(1,min(8,NCORES))
     shell:

@@ -64,7 +64,7 @@ rule call_peaks:
         genome='hs',
         fdr=PEAK_FDR,
         peak_mode_str=PEAK_MODE_STR,
-        output_joined=','.join(['peak/{sample}_peaks.xls','peak/{sample}_peaks.narrowPeak' if PEAK_MODE=='narrow' else 'peak/{sample}_peaks.broadPeak', 'peak/{sample}_summits.bed' if PEAK_MODE=='narrow' else 'peak/{sample}_peaks.gappedPeak']),
+        output_joined=','.join([paths.peak.xls, paths.peak.peak_narrow if PEAK_MODE=='narrow' else paths.peak.peak_broad, paths.peak.extra_narrow if PEAK_MODE=='narrow' else paths.peak.extra_broad]),
         srcdir=SOURCEDIR,
         doencrypt=DOENCRYPT,
         openssl=OPENSSL,
