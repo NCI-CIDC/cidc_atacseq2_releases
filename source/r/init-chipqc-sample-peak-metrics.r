@@ -42,7 +42,7 @@ if(length(args)>0) {
 ## quantify for one sample
 #data(blacklist_hg19)
 #chipqc.obj = ChIPQCsample(paste0(predir,'/',bam), paste0(predir,'/',peak), annotation="hg19", blacklist = blacklist.hg19)#, blacklist = blacklist.hg38)
-chipqc.obj = ChIPQCsample(paste0(predir,'/',bam), paste0(predir,'/',peak), annotation="hg38")
+chipqc.obj = ChIPQCsample(bam, peak, annotation="hg38")
 #chipqc.obj = ChIPQCsample(paste0(predir,'/bam/SAM01.bam'), peaks=paste0(predir,'/peak/SAM01_peaks.narrowPeak'), annotation="hg19", blacklist = blacklist.hg19, chromosomes='chr22') ## test
 
 ## create report
