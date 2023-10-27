@@ -1,11 +1,12 @@
-## TODO add other important out files to output
 ## Run CNV analysis with QDNAseq
 rule cnv_analysis:
    input:
        bam=rules.run_bwa.output,
        idx=rules.index_bam.output
    output:
-       paths.cnv.bed
+       bed=paths.cnv.bed,
+       igv=paths.cnv.igv,
+       csv=paths.cnv.csv
    benchmark:
        'benchmark/{sample}_cnv_analysis.tab'
    log:
@@ -16,6 +17,7 @@ rule cnv_analysis:
        sample='{sample}',
        predir=PREDIR,
        annot_gtf=paths.annot.gtf,
+       output_joined=','.join([paths.cnv.bed, paths.cnv.igv, paths.cnv.csv]),
        srcdir=SOURCEDIR,
        doencrypt=DOENCRYPT,
        openssl=OPENSSL,
@@ -35,7 +37,7 @@ rule cnv_analysis:
          python3 {params.srcdir}/python/init-encrypt-archive.py --src {params.srcdir}\
          --doencrypt {params.doencrypt} --openssl {params.openssl} --encrypt-pass {params.encrypt_pass} --hash {params.hash} \
          --doarchive {params.doarchive} --archive {params.archive} --cloud {params.cloud} \
-         --output {output} \
+         --output {params.output_joined} \
          2>> {log}
 
          ## export rule env details
