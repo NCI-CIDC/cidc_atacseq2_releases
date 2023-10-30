@@ -22,35 +22,46 @@
 # Output:
 #############################################################################################################
 
-libs = c('QDNAseq', 'QDNAseq.hg19');
+libs = c('QDNAseq', 'GenomicRanges', 'rtracklayer', 'remotes');
 invisible(suppressPackageStartupMessages(lapply(libs, require, character.only=T)))
+## qdnaseq uses hg19 default with package
+## installing hg38 qdnaseq bin annot from package asntech/github - package is not in conda currently
+if (!require("QDNAseq.hg38")){
+	remotes::install_github("asntech/QDNAseq.hg38@main", upgrade="never")
+}
+library(QDNAseq.hg38)
 
 
-## get path to config.xlsx and source dir command line arguments
+## cmd line args
 args = commandArgs(trailingOnly = TRUE)
 if(length(args)>0) {
 	predir = args[1]
 	sample = args[2]
+	annot.gtf.file = args[3]
 }else{
     stop("ERROR: No predir and/or sample name supplied.")
 }
 
-#setwd(paste0(predir,'/cnv'))
 
-## obtain bin annotations
-bins <- getBinAnnotations(binSize=15)
+###########
+#
+# Call CNV
+#
+###########
+## get bin annots
+bins <- getBinAnnotations(binSize=15, genome="hg38")
 
 ## Read in sample bam files
 readCounts <- binReadCounts(bins, bamfiles=paste0(predir,'/bam/',sample,'.bam'))
 
 ## Plot raw copy number profile (read counts across the genome) and highlight bins to remove with default filtering
 pdf(file = paste0(predir,'/cnv/',sample,'_cn_profile_pre.pdf'))
-plot(readCounts, logTransform=FALSE, ylim=c(-50, 200))
+plot(readCounts, logTransform=FALSE)
 highlightFilters(readCounts, logTransform=FALSE, residual=TRUE, blacklist=TRUE)
 garb=dev.off()
 
 ## Apply filters
-readCountsFiltered <- applyFilters(readCounts, residual=TRUE, blacklist=TRUE)
+readCountsFiltered <- applyFilters(readCounts, residual=TRUE, blacklist=TRUE, chromosomes = c("Y", "MT"))
 
 ## plot median read counts as a function of GC content and mappability
 pdf(file = paste0(predir,'/cnv/',sample,'_med_read_counts.pdf'))
@@ -77,5 +88,64 @@ garb=dev.off()
 
 ## export as BED file
 invisible(exportBins(copyNumbersSmooth, file=paste0(predir,'/cnv/',sample,'_cnv.bed'), format="bed"))
+invisible(exportBins(copyNumbersSmooth, file=paste0(predir,'/cnv/',sample,'_cnv.igv'), format="igv"))
 
+## Segment
+copyNumbersSegmented <- segmentBins(copyNumbersSmooth, transformFun="sqrt")
+copyNumbersSegmented <- normalizeSegmentedBins(copyNumbersSegmented)
+
+## Copy number profile of segments
+pdf(file = paste0(predir,'/cnv/',sample,'_cn_profile_segment.pdf'))
+plot(copyNumbersSegmented)
+garb=dev.off()
+
+## Call copy numbers
+copyNumbersCalled <- callBins(copyNumbersSegmented)
+
+## Copy number profile of segments
+pdf(file = paste0(predir,'/cnv/',sample,'_cn_profile_calls.pdf'))
+plot(copyNumbersCalled)
+garb=dev.off()
+
+## Export segmented and called copy numbers as IGV and BED
+invisible(exportBins(copyNumbersSegmented, file=paste0(predir,'/cnv/',sample,"_cnv_segmented.bed"), format="bed", type="segments"))
+invisible(exportBins(copyNumbersSegmented, file=paste0(predir,'/cnv/',sample,"_cnv_segmented.igv"), format="igv", type="segments"))
+invisible(exportBins(copyNumbersCalled, file=paste0(predir,'/cnv/',sample,"_cnv_calls.bed"), format="bed", logTransform=FALSE, type="calls"))
+invisible(exportBins(copyNumbersCalled, file=paste0(predir,'/cnv/',sample,"_cnv_calls.igv"), format="igv", logTransform=FALSE, type="calls"))
+
+
+
+############
+#
+# Annot CNV
+#
+############
+## sample cnv segmented calls
+cnv.file = paste0(predir,'/cnv/',sample,'_cnv_segmented.bed')
+cnv = read.csv(cnv.file, header=F, sep='')
+cnv = cnv[-1,]
+colnames(cnv) = c('chr', 'start', 'end', 'feature', 'score', 'strand')
+
+## reference annot gtf
+annot = rtracklayer::readGFF(annot.gtf.file)
+annot = annot[annot$type=='gene', c('seqid','start', 'end', 'gene_id', 'gene_name', 'gene_biotype', 'strand')]
+colnames(annot) = c('chr', 'start', 'end', 'gene.id', 'gene.name', 'gene.type', 'strand')
+
+## create genomic ranges objects
+cnv.ranges = GRanges(seqnames=cnv$chr, ranges=IRanges(start=as.numeric(cnv$start), end=as.numeric(cnv$end)))
+annot.ranges = GRanges(seqnames=annot$chr, ranges=IRanges(start=as.numeric(annot$start), end=as.numeric(annot$end)))
+
+## find overlaps in ranges
+cnv.annot = findOverlaps(cnv.ranges, annot.ranges)
+
+## add annot info to cnv data based on overlap hits
+cnv$gene.id=NA
+cnv$gene.name=NA
+cnv$gene.type=NA
+cnv[queryHits(cnv.annot),'gene.id'] = annot[subjectHits(cnv.annot), 'gene.id']
+cnv[queryHits(cnv.annot),'gene.name'] = annot[subjectHits(cnv.annot), 'gene.name']
+cnv[queryHits(cnv.annot),'gene.type'] = annot[subjectHits(cnv.annot), 'gene.type']
+
+## write annotated cnv
+write.table(cnv, paste0(predir,'/cnv/',sample,'_cnv_annot.csv'), sep=',', quote=F, row.names=F, col.names=T)
 
