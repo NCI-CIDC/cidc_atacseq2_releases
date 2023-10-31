@@ -80,8 +80,8 @@ rule call_peaks:
     threads: 1
     shell:
         '''
-          echo "{params.macs} callpeak -f {params.format} -g {params.genome} -t {input.bam} --outdir peak -n {params.sample} -q {params.fdr} {params.peak_mode_str}" | tee {log}
-          {params.macs} callpeak -f {params.format} -g {params.genome} -t {input.bam} --outdir peak -n {params.sample} -q {params.fdr} {params.peak_mode_str} 2>> {log}
+          echo "{params.macs} callpeak -f {params.format} -g {params.genome} -t {input.bam} --outdir peak -n {params.sample} -q {params.fdr} {params.peak_mode_str} --keep-dup all" | tee {log}
+          {params.macs} callpeak -f {params.format} -g {params.genome} -t {input.bam} --outdir peak -n {params.sample} -q {params.fdr} {params.peak_mode_str} --keep-dup all 2>> {log}
 
           ## encrypt and archive if needed
           python3 {params.srcdir}/python/init-encrypt-archive.py --src {params.srcdir}\
