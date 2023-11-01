@@ -14,7 +14,7 @@ rule run_bwa:
     params:
         sample='{sample}',
         indexseq=INDEXSEQ,
-        in_fa_str=expand('rqual_filter/{{sample}}_{pe}{paired}_qual.fastq.gz',pe=ENDS,paired=['P', 'U'])[0] + ' ' + expand('rqual_filter/{{sample}}_{pe}{paired}_qual.fastq.gz',pe=ENDS,paired=['P', 'U'])[2] if len(ENDS) == 2 else expand('rqual_filter/{{sample}}_{pe}_qual.fastq.gz',pe=ENDS)[0],
+        in_fa_str=expand(paths.rqual_filter.qfilter_fastq_paired, read=ENDS, paired=['P','U'])[0] + ' ' + expand(paths.rqual_filter.qfilter_fastq_paired, read=ENDS, paired=['P','U'])[2] if len(ENDS) == 2 else expand(paths.rqual_filter.qfilter_fastq_single, read=ENDS)[0],
         srcdir=SOURCEDIR,
         doencrypt=DOENCRYPT,
         openssl=OPENSSL,
@@ -65,7 +65,7 @@ rule fastqc:
     input:
         rules.run_bwa.output
     output:
-        temp(paths.fastqc.targz)
+        paths.fastqc.targz
     benchmark:
         'benchmark/{sample}_fastqc.tab'
     log:

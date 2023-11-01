@@ -1,11 +1,12 @@
-## TODO add other important out files to output
 ## Run CNV analysis with QDNAseq
 rule cnv_analysis:
    input:
        bam=rules.run_bwa.output,
        idx=rules.index_bam.output
    output:
-       paths.cnv.bed
+       bed=paths.cnv.bed,
+       igv=paths.cnv.igv,
+       csv=paths.cnv.csv
    benchmark:
        'benchmark/{sample}_cnv_analysis.tab'
    log:
@@ -15,6 +16,8 @@ rule cnv_analysis:
    params:
        sample='{sample}',
        predir=PREDIR,
+       annot_gtf=paths.annot.gtf,
+       output_joined=','.join([paths.cnv.bed, paths.cnv.igv, paths.cnv.csv]),
        srcdir=SOURCEDIR,
        doencrypt=DOENCRYPT,
        openssl=OPENSSL,
@@ -27,14 +30,14 @@ rule cnv_analysis:
    threads: 1
    shell:
        '''
-         echo "Rscript --vanilla {params.srcdir}/r/init-qdnaseq-cnv-analysis.r {params.predir} {params.sample}" | tee {log}
-         Rscript --vanilla {params.srcdir}/r/init-qdnaseq-cnv-analysis.r {params.predir} {params.sample} 2>> {log}
+         echo "Rscript --vanilla {params.srcdir}/r/init-qdnaseq-cnv-analysis.r {params.predir} {params.sample} {params.annot_gtf}" | tee {log}
+         Rscript --vanilla {params.srcdir}/r/init-qdnaseq-cnv-analysis.r {params.predir} {params.sample} {params.annot_gtf} 2>> {log}
 
          ## encrypt and archive if needed
          python3 {params.srcdir}/python/init-encrypt-archive.py --src {params.srcdir}\
          --doencrypt {params.doencrypt} --openssl {params.openssl} --encrypt-pass {params.encrypt_pass} --hash {params.hash} \
          --doarchive {params.doarchive} --archive {params.archive} --cloud {params.cloud} \
-         --output {output} \
+         --output {params.output_joined} \
          2>> {log}
 
          ## export rule env details
@@ -64,7 +67,7 @@ rule call_peaks:
         genome='hs',
         fdr=PEAK_FDR,
         peak_mode_str=PEAK_MODE_STR,
-        output_joined=','.join(['peak/{sample}_peaks.xls','peak/{sample}_peaks.narrowPeak' if PEAK_MODE=='narrow' else 'peak/{sample}_peaks.broadPeak', 'peak/{sample}_summits.bed' if PEAK_MODE=='narrow' else 'peak/{sample}_peaks.gappedPeak']),
+        output_joined=','.join([paths.peak.xls, paths.peak.peak_narrow if PEAK_MODE=='narrow' else paths.peak.peak_broad, paths.peak.extra_narrow if PEAK_MODE=='narrow' else paths.peak.extra_broad]),
         srcdir=SOURCEDIR,
         doencrypt=DOENCRYPT,
         openssl=OPENSSL,
@@ -77,8 +80,8 @@ rule call_peaks:
     threads: 1
     shell:
         '''
-          echo "{params.macs} callpeak -f {params.format} -g {params.genome} -t {input.bam} --outdir peak -n {params.sample} -q {params.fdr} {params.peak_mode_str}" | tee {log}
-          {params.macs} callpeak -f {params.format} -g {params.genome} -t {input.bam} --outdir peak -n {params.sample} -q {params.fdr} {params.peak_mode_str} 2>> {log}
+          echo "{params.macs} callpeak -f {params.format} -g {params.genome} -t {input.bam} --outdir peak -n {params.sample} -q {params.fdr} {params.peak_mode_str} --keep-dup all" | tee {log}
+          {params.macs} callpeak -f {params.format} -g {params.genome} -t {input.bam} --outdir peak -n {params.sample} -q {params.fdr} {params.peak_mode_str} --keep-dup all 2>> {log}
 
           ## encrypt and archive if needed
           python3 {params.srcdir}/python/init-encrypt-archive.py --src {params.srcdir}\

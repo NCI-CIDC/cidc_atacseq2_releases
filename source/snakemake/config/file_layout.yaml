@@ -32,7 +32,10 @@ fastqc:
 
 ## ANALYSIS
 cnv:
-    bed: "{sample}_cnv.bed"
+    bed: "{sample}_cnv_segmented.bed"
+    igv: "{sample}_cnv_segmented.igv"
+    csv: "{sample}_cnv_annot.csv"
+
 
 peak:
     xls: "{sample}_peaks.xls"

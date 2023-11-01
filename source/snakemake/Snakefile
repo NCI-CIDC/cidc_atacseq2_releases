@@ -190,7 +190,7 @@ _logging.basicConfig(level=LOG_LEVEL,
 ################################
 OUTPUT = [expand(paths.rseqc.bamqc_txt, sample=SAMID),
           expand(paths.rseqc.bamgc_txt, sample=SAMID),
-          expand(paths.cnv.bed, sample=SAMID),
+          expand(paths.cnv.csv, sample=SAMID),
           expand(paths.peak.xls, sample=SAMID),
            expand(paths.chipqc.csv, sample=SAMID)]
 if RUN_FASTQC == 1:
