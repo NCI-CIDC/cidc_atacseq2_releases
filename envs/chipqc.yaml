@@ -1,4 +1,4 @@
-name: cnv_analysis
+name: chipqc
 channels:
     - conda-forge
     - bioconda
