@@ -30,6 +30,10 @@ from pathlib import Path
 from box import Box
 import yaml
 
+wildcard_constraints:
+    sample="[^_]+"
+
+
 ##############################
 #       CONFIGURATION        #
 ##############################
@@ -188,11 +192,19 @@ _logging.basicConfig(level=LOG_LEVEL,
 ################################
 #     DEFINE TARGET OUTPUT     #
 ################################
+
 OUTPUT = [expand(paths.rseqc.bamqc_txt, sample=SAMID),
           expand(paths.rseqc.bamgc_txt, sample=SAMID),
           expand(paths.cnv.csv, sample=SAMID),
           expand(paths.peak.xls, sample=SAMID),
-           expand(paths.chipqc.csv, sample=SAMID)]
+          expand(paths.chipqc.csv, sample=SAMID)]
+
+if PEAK_MODE == "narrow":
+    OUTPUT.append(expand(paths.motif.narrow_peak, sample=SAMID))
+    OUTPUT.append(expand(paths.motif.summit, sample=SAMID))
+else:
+    OUTPUT.append(expand(paths.motif.broad_peak, sample=SAMID))
+   
 if RUN_FASTQC == 1:
     OUTPUT.append(expand(paths.fastqc.targz, sample=SAMID))
 
@@ -242,3 +254,5 @@ include: "./rules/initialization.smk"
 include: "./rules/ingest.smk"
 include: "./rules/mapping.smk"
 include: "./rules/analysis.smk"
+include: "./rules/format_peaks.smk"
+include: "./rules/motif.smk"
