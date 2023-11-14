@@ -118,7 +118,7 @@ rule bdg_to_bw:
     shell:
         '''
           ## convert bdg to bw
-          echo "bedGraphToBigWig {input.pileup_bdg} {input.genome_size} {output}" | tee -a {log}
+          echo "bedGraphToBigWig {input.pileup_bdg} {input.genome_size} {output}" | tee {log}
           bedGraphToBigWig {input.pileup_bdg} {input.genome_size} {output} 2>> {log}
 
           ## export rule env details
