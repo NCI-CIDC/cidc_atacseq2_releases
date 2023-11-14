@@ -112,16 +112,7 @@ rule bdg_to_bw:
     conda:
         SOURCEDIR + "/../envs/bdg_to_bw.yaml"
     params:
-        sample='{sample}',
-        indexseq=paths.genome.fa,
-        srcdir=SOURCEDIR,
-        doencrypt=DOENCRYPT,
-        openssl=OPENSSL,
-        encrypt_pass=ENCRYPT_PASS,
-        hash=HASH,
-        doarchive=DOARCHIVE,
-        archive=ARCHIVE,
-        cloud=CLOUD
+        sample='{sample}'
     priority: 1
     threads: 1
     shell:
@@ -177,7 +168,7 @@ rule chipqc:
           conda env export --no-builds > info/chipqc.info
         '''
 
-## Get peak metrics per sample with ChIPQC
+## Annotate peaks and perform functional pathway enrichment
 rule annot_peaks:
     input:
         peak=rules.call_peaks.output.peak
