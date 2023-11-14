@@ -1,4 +1,4 @@
-## Get peak metrics per sample with ChIPQC
+## Generate genome tracks
 rule genome_track:
     input:
         peak=rules.call_peaks.output.peak,
