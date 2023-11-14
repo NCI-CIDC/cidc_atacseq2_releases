@@ -49,17 +49,29 @@ peak:
     annot_stat: "{sample}_peaks_annot_stat.csv"
     annot_tab: "{sample}_peaks_annot.csv"
 
+format_peaks:
+    summits: "{sample}_sorted_summits.bed"
+    filtered_sorted_summits: "{sample}_5k_sorted_summits.bed"
+    narrowPeak: "{sample}_sorted_peaks.narrowPeak"
+    filtered_sorted_narrowPeak: "{sample}_5k_sorted_peaks.narrowPeak"
+    broadPeak: "{sample}_sorted_peaks.broadPeak"
+    filtered_sorted_broadPeak: "{sample}_5k_sorted_peaks.broadPeak"
+
 chipqc:
     csv: "{sample}_chipqc.csv"
-
-track:
-    ini: "{sample}_track.ini"
-    png: "{sample}_track.png"
 
 ptw:
     gobp: "{sample}_gobp_ptw.csv"
     kegg: "{sample}_kegg_ptw.csv"
 
+track:
+    ini: "{sample}_track.ini"
+    png: "{sample}_track.png"
+
+motif:
+    narrow_peak: "narrow_peak/{sample}/"
+    summit: "summit/{sample}/"
+    broad_peak: "broad_peak/{sample}/"    
 
 
 ## DOWNSTREAM ANALYSIS ## TODO
