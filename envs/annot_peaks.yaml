@@ -1,14 +1,13 @@
-name: chipqc
+name: annot_peaks
 channels:
     - conda-forge
     - bioconda
 dependencies:
     - python==3.10.12
     - snakemake
-    - r-base
-    - bioconductor-chipqc
-    - bioconductor-txdb.hsapiens.ucsc.hg38.knowngene
-    - r-data.table
+    - bioconductor-chipseeker
+    - bioconductor-clusterprofiler
+    - bioconductor-org.hs.eg.db
     - openssl
     - gsutil
     - awscli

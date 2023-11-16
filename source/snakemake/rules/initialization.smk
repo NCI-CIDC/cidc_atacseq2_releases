@@ -1,4 +1,4 @@
-## Set up directory structure UPDATE make dirs based on config input
+## Set up directory structure based on dirs supplied in config
 ## Ignores non-zero exit status returned when any directories already exist
 rule directory_setup:
     output:
@@ -11,7 +11,6 @@ rule directory_setup:
           mkdir {params.subdirs} -p 2> /dev/null
           touch {output}
         '''
-
 
 ## Build reference genome index
 rule build_bwa_index:
@@ -37,4 +36,32 @@ rule build_bwa_index:
 
           ## export rule env details
           conda env export --no-builds > info/bwa.info
+        '''
+
+## Get genome chrom sizes for bw generation
+rule genome_size:
+    input:
+        rules.build_bwa_index.output
+    output:
+        paths.genome.size
+    benchmark:
+        'benchmark/genome_size.tab'
+    log:
+        'log/genome_size.log'
+    conda:
+        SOURCEDIR+"/../envs/samtools.yaml"
+    params:
+        indexseq=paths.genome.fa
+    priority: 2
+    threads: 1
+    shell:
+        '''
+          ## get genome chrom size
+          echo "samtools faidx {params.indexseq}" | tee {log}
+          samtools faidx {params.indexseq} 2>> {log}
+          echo "cut -f1,2 {params.indexseq}.fai > {output}" | tee -a {log}
+          cut -f1,2 {params.indexseq}.fai > {output} 2>> {log}
+          
+          ## export rule env details
+          conda env export --no-builds > info/samtools.info
         '''
