@@ -56,9 +56,6 @@ workflow.config[is.na(workflow.config)] = '' # replace missing values with empty
 ## import analysis configs
 analysis.config = read.xlsx(infile,sheet=3)[,c('Name','Value')] # key value fields only
 
-## define any needed variables - Example: ensembl version
-ensembl.version = workflow.config$Value[workflow.config$Name=='ensembl_version']
-
 
 #################
 #
@@ -66,23 +63,6 @@ ensembl.version = workflow.config$Value[workflow.config$Name=='ensembl_version']
 #
 #################
 cat('Performing sanity checks on configuration options\n')
-
-## SKIP this since using conda
-# ## ensure all programs exist - TODO auto populate program list from config
-# progs = c(workflow.config$Value[match(c('openssl_prog','samtools_prog','fastqc_prog','bwa_prog','cloud_prog','cutadapt_prog','trimmomatic_prog','rseqc_dir'),workflow.config$Name)])
-# for (i in 1:length(progs)) {
-# 	if(!file.exists(progs[i])) {
-# 		cat(paste('Program does not exist at this location!',progs[i],'\n'))
-# 		q(status=25,save='no')
-# 	}
-# }
-
-## ensure ensembl version is valid ## TODO turning off for now
-# ensembl.test = tryCatch(is(useEnsembl(biomart="ensembl", dataset="hsapiens_gene_ensembl", version=ensembl.version),'Mart'), error = function(e) FALSE)
-# if(ensembl.test==F) {
-# 	cat(paste('The specified Ensembl version is invalid:',ensembl.version,'\n'))
-# 	q(status=25,save='no')
-# }
 
 
 ############################
@@ -126,9 +106,6 @@ if(!dir.exists(paste(results.dir,'report',sep='/'))) {
 	system(paste('mkdir',paste(results.dir,'report',sep='/')))
 }
 
-## add any variables from workflow config to analysis config
-analysis.config = rbind(analysis.config,c('ensembl_version',ensembl.version))
-
 ## write analysis configuration
 write.table(analysis.config,paste(dta.dir,'analysis_config.csv',sep='/'),sep=',',quote=T,row.names=F)
 
@@ -145,18 +122,18 @@ write.table(metadata,paste(pre.dir,'sample_metadata.csv',sep='/'),na='',sep=',',
 #################################
 cat('Downloading / parsing annotation files\n')
 
-## download version of genome from ensembl FTP
-genome.file = paste(pre.dir,'/genome/Homo_sapiens.ensembl.version',ensembl.version,'.genome.fa',sep='')
+## download genome fa from FTP
+genome.file = paste(pre.dir,'/genome/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna',sep='')
 if(!file.exists(genome.file)) {
-	cat('Downloading Genome annotations from Ensembl FTP site\n')
-	system(paste(source.dir,'/shell/download-ensembl-genome.sh ',ensembl.version,' ',dirname(genome.file),sep=''))
+	cat('Downloading Genome from NCBI FTP site\n')
+	system(paste(source.dir,'/shell/download-genome-fa.sh ',dirname(genome.file),sep=''))
 }
 
-## download version of GTF from ensembl FTP
-gtf.file = paste(pre.dir,'/annot/Homo_sapiens.ensembl.version',ensembl.version,'.chr.gtf',sep='')
+## download genome GTF from FTP
+gtf.file = paste(pre.dir,'/annot/GCA_000001405.15_GRCh38_full_analysis_set.refseq_annotation.gtf',sep='')
 if(!file.exists(gtf.file)) {
-	cat('Downloading GTF annotations from Ensembl FTP site\n')
-	system(paste(source.dir,'/shell/download-ensembl-gtf.sh ',ensembl.version,' ',dirname(gtf.file),sep=''))
+	cat('Downloading Genome GTF annotations from NCBI FTP site\n')
+	system(paste(source.dir,'/shell/download-genome-gtf.sh ',dirname(gtf.file),sep=''))
 }
 
 
