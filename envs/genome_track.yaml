@@ -1,14 +1,11 @@
-name: chipqc
+name: genome_track
 channels:
     - conda-forge
     - bioconda
 dependencies:
     - python==3.10.12
     - snakemake
-    - r-base
-    - bioconductor-chipqc
-    - bioconductor-txdb.hsapiens.ucsc.hg38.knowngene
-    - r-data.table
+    - pygenometracks
     - openssl
     - gsutil
     - awscli

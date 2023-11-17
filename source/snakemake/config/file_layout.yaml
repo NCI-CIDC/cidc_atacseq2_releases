@@ -2,6 +2,7 @@
 genome:
     fa: "Homo_sapiens.ensembl.version110.genome.fa"
     bwt: "Homo_sapiens.ensembl.version110.genome.fa.bwt"
+    size: "genome.size"
 annot:
     gtf: "Homo_sapiens.ensembl.version110.chr.gtf"
 
@@ -37,16 +38,17 @@ cnv:
     igv: "{sample}_cnv_segmented.igv"
     csv: "{sample}_cnv_annot.csv"
 
-
 peak:
     xls: "{sample}_peaks.xls"
     peak_narrow: "{sample}_peaks.narrowPeak"
     peak_broad: "{sample}_peaks.broadPeak"
     extra_narrow: "{sample}_summits.bed"
     extra_broad: "{sample}_peaks.gappedPeak"
-
-chipqc:
-    csv: "{sample}_chipqc.csv"
+    pileup_bdg: "{sample}_treat_pileup.bdg"
+    lambda_bdg: "{sample}_control_lambda.bdg"
+    bw: "{sample}_peaks.bw"
+    annot_stat: "{sample}_peaks_annot_stat.csv"
+    annot_tab: "{sample}_peaks_annot.csv"
 
 format_peaks:
     summits: "{sample}_sorted_summits.bed"
@@ -56,6 +58,17 @@ format_peaks:
     broadPeak: "{sample}_sorted_peaks.broadPeak"
     filtered_sorted_broadPeak: "{sample}_5k_sorted_peaks.broadPeak"
 
+chipqc:
+    csv: "{sample}_chipqc.csv"
+
+ptw:
+    gobp: "{sample}_gobp_ptw.csv"
+    kegg: "{sample}_kegg_ptw.csv"
+
+track:
+    ini: "{sample}_track.ini"
+    png: "{sample}_track.png"
+
 motif:
     narrow_peak: "narrow_peak/{sample}/"
     summit: "summit/{sample}/"
@@ -63,8 +76,6 @@ motif:
 
 
 ## DOWNSTREAM ANALYSIS ## TODO
-#ceas:
-#    csv: "{sample}_peak_annot.csv"
 #gene_target:
 #    csv: "{sample}_gene_target.csv"
 #motif:
