@@ -38,6 +38,38 @@ rule run_bwa:
           2>> {log}
         '''
 
+## Perform post-alignment filtering on the sorted bam
+rule filter_bam:
+    input:
+        bam=rules.run_bwa.output,
+        blacklist=rules.retrieve_hg38_blacklist.output,
+        fai=rules.filtered_fai.output
+    output:
+        filtered_bam=paths.bam.filtered_bam
+        temp_filtered_bam=paths.bam.filtered_bam.temp
+    benchmark:
+        'benchmark/{sample}_filer_bam.tab'
+    log:
+        'log/{sample}_filter_bam.log'
+    conda:
+        SOURCEDIR+"/../envs/bwa.yaml"
+    shell:
+        '''
+        ## Remove the entries from chrM, chrUN, _random, chrEBV in the hg38 genome index
+        grep -v -E 'chrUn|_random|chrEBV|chrM' GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.fai > filtered_GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.fai
+
+        ## Mark duplicates and provide duplicate stats for the raw bam
+        ## NOTE: The command line for Picard is going to be updated in the future. Refer to link below.
+        ## https://github.com/broadinstitute/picard/wiki/Command-Line-Syntax-Transition-For-Users-(Pre-Transition)
+        java -jar /home/trivittge_nih_gov/picard.jar MarkDuplicates I=SAM01.bam O=dup_SAM01.bam M=marked_duplicates_metrics.txt
+
+        ## Remove reads that are unmapped, mate unmapped (for paired-end), not primary alignment,
+        ## fail platform/vendor quality checks, and PCR or optical duplicates
+        samtools view -b -F 1804 --region-file {input.fai} {input.bam} -o {output.temp_filtered_bam}
+
+        ## Remove reads that are located in the hg38 blacklist
+        bedtools intersect -v -abam {output.temp_filtered_bam} -b {input.blacklist} > {output.filtered.bam}
+
 ## Index BAM
 rule index_bam:
     input:

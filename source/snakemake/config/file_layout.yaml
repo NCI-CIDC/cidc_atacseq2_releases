@@ -20,6 +20,7 @@ rqual_filter:
 bam:
     bam: "{sample}.bam"
     index: "{sample}.bam.bai"
+    filtered_bam: "{sample}_filtered.bam"
 
 rseqc:
     bamqc_txt: "{sample}_bam_qc.txt"

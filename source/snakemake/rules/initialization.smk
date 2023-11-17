@@ -12,6 +12,13 @@ rule directory_setup:
           touch {output}
         '''
 
+## Retrieve hg38 blacklist from https://github.com/Boyle-Lab/Blacklist
+rule retrieve_hg38_blackist:
+    output:
+        'blacklist/hg38-blacklist.v2.bed'
+    threads: 1
+    shell:
+        'wget -qO - https://github.com/Boyle-Lab/Blacklist/raw/master/lists/hg38-blacklist.v2.bed.gz | gunzip > {output}' 
 
 ## Build reference genome index
 rule build_bwa_index:
