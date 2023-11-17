@@ -1,0 +1,13 @@
+name: annot_peaks
+channels:
+    - conda-forge
+    - bioconda
+dependencies:
+    - python==3.10.12
+    - snakemake
+    - bioconductor-chipseeker
+    - bioconductor-clusterprofiler
+    - bioconductor-org.hs.eg.db
+    - openssl
+    - gsutil
+    - awscli

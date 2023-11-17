@@ -115,6 +115,9 @@ ANNOTATIONS_GTF = 'annot/Homo_sapiens.ensembl.version'+str(ENSEMBL)+'.chr.gtf'
 ## Run fastqc?
 RUN_FASTQC = int(config["run_fastqc"])
 
+## Run genome tracks?
+RUN_GENOME_TRACK = int(config["run_genome_track"])
+
 ## Save intermediate files?
 REMOVEINTFILES = not config["saveintlocalfiles"]
 
@@ -156,12 +159,10 @@ SHIFT = str(config["shift"])
 PEAK_FDR = str(config["peak_fdr"])
 
 ## Create peak mode str for macs
-if len(ENDS)==1 and PEAK_MODE=='broad':
+if PEAK_MODE == 'broad':
     PEAK_MODE_STR = '--broad --broad-cutoff %s --nomodel --shift %s --extsize %s' % (PEAK_FDR, SHIFT, EXTSIZE)
-elif len(ENDS)==2 and PEAK_MODE=='broad':
-    PEAK_MODE_STR = '--broad --broad-cutoff %s --nomodel --extsize %s' % (PEAK_FDR, EXTSIZE)
 else:
-    PEAK_MODE_STR = ''
+    PEAK_MODE_STR = '--nomodel --shift %s --extsize %s' % (SHIFT, EXTSIZE)
 
 ## Configure uploading 
 ARCHIVE = config["archive_bucket"]
@@ -174,9 +175,6 @@ ENCRYPT_PASS = config["encrypt_pass"]
 
 ## Configure quality trimming level
 QUAL_CUTOFF = config["quality_trim"]
-
-## save unmapped reads or not
-SAVEUNMAPPED = int(config["save_unmapped"]) == 1
 
 ## hash for encryption/decryption & Checksums
 HASH = config["hash"]
@@ -196,17 +194,23 @@ _logging.basicConfig(level=LOG_LEVEL,
 OUTPUT = [expand(paths.rseqc.bamqc_txt, sample=SAMID),
           expand(paths.rseqc.bamgc_txt, sample=SAMID),
           expand(paths.cnv.csv, sample=SAMID),
-          expand(paths.peak.xls, sample=SAMID),
-          expand(paths.chipqc.csv, sample=SAMID)]
+          expand(paths.peak.bw, sample=SAMID),
+          expand(paths.chipqc.csv, sample=SAMID),
+          expand(paths.peak.annot_tab, sample=SAMID),
+          expand(paths.ptw.gobp, sample=SAMID),
+          expand(paths.ptw.kegg, sample=SAMID)]
+
+if RUN_FASTQC == 1:
+    OUTPUT.append(expand(paths.fastqc.targz, sample=SAMID))
+
+if RUN_GENOME_TRACK == 1:
+    OUTPUT.append(expand(paths.track.png, sample=SAMID))
 
 if PEAK_MODE == "narrow":
     OUTPUT.append(expand(paths.motif.narrow_peak, sample=SAMID))
     OUTPUT.append(expand(paths.motif.summit, sample=SAMID))
 else:
     OUTPUT.append(expand(paths.motif.broad_peak, sample=SAMID))
-   
-if RUN_FASTQC == 1:
-    OUTPUT.append(expand(paths.fastqc.targz, sample=SAMID))
 
 
 
@@ -255,4 +259,6 @@ include: "./rules/ingest.smk"
 include: "./rules/mapping.smk"
 include: "./rules/analysis.smk"
 include: "./rules/format_peaks.smk"
+include: "./rules/track.smk"
 include: "./rules/motif.smk"
+

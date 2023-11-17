@@ -1,0 +1,11 @@
+name: genome_track
+channels:
+    - conda-forge
+    - bioconda
+dependencies:
+    - python==3.10.12
+    - snakemake
+    - pygenometracks
+    - openssl
+    - gsutil
+    - awscli
