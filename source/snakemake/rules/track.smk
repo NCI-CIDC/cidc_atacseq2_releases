@@ -39,7 +39,7 @@ rule genome_track:
           ## change font size
           sed -i "s/^fontsize = 10/fontsize = 8/g" {output.ini}
           ## change annot label
-          sed -i "s/^title = Homo_sapiens.ensembl.version110.chr/title = GRCh38/g" {output.ini}
+          sed -i "s/^title = GCA_000001405.15_GRCh38_full_analysis_set.refseq_annotation/title = GRCh38/g" {output.ini}
 
           ## create track image
           echo "pyGenomeTracks --tracks {output.ini} --region {params.track_region} -o {output.png} --dpi 300" | tee -a {log}

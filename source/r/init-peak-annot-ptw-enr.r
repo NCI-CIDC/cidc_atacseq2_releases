@@ -35,12 +35,19 @@ if(length(args)>0) {
 	annot.gtf.file = args[3]
 	peak = args[4]
 }else{
-    stop("ERROR: No predir and/or needed sample info supplied.")
+    stop("ERROR: No predir, sample name, annot gtf, and/or peak file supplied.")
 }
 
 
+
 ## read in genome annot gtf file
-txdb = GenomicFeatures::makeTxDbFromGFF(annot.gtf.file)
+annot.df = rtracklayer::readGFF(annot.gtf.file)
+## filter out alt chroms
+annot.df$seqid = as.character(annot.df$seqid)
+annot.df = annot.df[nchar(annot.df$seqid)<6,]
+## create txdb
+annot.gr = GenomicRanges::makeGRangesFromDataFrame(annot.df, keep.extra.columns=T)
+txdb = GenomicFeatures::makeTxDbFromGRanges(annot.gr)
 
 
 ##############
@@ -49,9 +56,12 @@ txdb = GenomicFeatures::makeTxDbFromGFF(annot.gtf.file)
 #
 #############
 ## annotate peaks with chipseeker
-annot.obj = annotatePeak(peak, TxDb=txdb, annoDb="org.Hs.eg.db", tssRegion=c(-1000, 1000))
+annot.obj = annotatePeak(peak, TxDb=txdb, tssRegion=c(-1000, 1000))
 annot.stat = data.frame(annot.obj@annoStat)
 annot.tab = data.frame(annot.obj@anno)
+## map entrez id for ptw enr
+annot.tab$ENTREZID = NA
+annot.tab$ENTREZID = unname(mapIds(org.Hs.eg.db, annot.tab$geneId, 'ENTREZID', 'SYMBOL', multiVals = "first"))
 
 ## write to file
 write.table(annot.stat, paste0(predir,'/peak/',sample,'_peaks_annot_stat.csv'), sep=',', quote=F, row.names=F, col.names=T)
@@ -79,7 +89,7 @@ ego = enrichGO(gene = annot.tab$ENTREZID,
                     OrgDb = org.Hs.eg.db,
                     ont = "BP",
                     pAdjustMethod = "BH",
-                    qvalueCutoff = 0.05,
+                    qvalueCutoff = 0.01,
                     readable = TRUE)
 ## write to file
 ego.summary = data.frame(ego)

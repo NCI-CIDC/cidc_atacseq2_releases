@@ -13,7 +13,7 @@ rule run_bwa:
         SOURCEDIR+"/../envs/bwa.yaml"
     params:
         sample='{sample}',
-        indexseq=INDEXSEQ,
+        indexseq=paths.genome.fa,
         in_fa_str=expand(paths.rqual_filter.qfilter_fastq_paired, read=ENDS, paired=['P','U'])[0] + ' ' + expand(paths.rqual_filter.qfilter_fastq_paired, read=ENDS, paired=['P','U'])[2] if len(ENDS) == 2 else expand(paths.rqual_filter.qfilter_fastq_single, read=ENDS)[0],
         srcdir=SOURCEDIR,
         doencrypt=DOENCRYPT,
