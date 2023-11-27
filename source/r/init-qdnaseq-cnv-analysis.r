@@ -39,8 +39,9 @@ if(length(args)>0) {
 	sample = args[2]
 	annot.gtf.file = args[3]
 }else{
-    stop("ERROR: No predir and/or sample name supplied.")
+    stop("ERROR: No predir, sample name, and/or annot gtf supplied.")
 }
+
 
 
 ###########
@@ -128,8 +129,9 @@ colnames(cnv) = c('chr', 'start', 'end', 'feature', 'score', 'strand')
 
 ## reference annot gtf
 annot = rtracklayer::readGFF(annot.gtf.file)
-annot = annot[annot$type=='gene', c('seqid','start', 'end', 'gene_id', 'gene_name', 'gene_biotype', 'strand')]
-colnames(annot) = c('chr', 'start', 'end', 'gene.id', 'gene.name', 'gene.type', 'strand')
+annot = annot[annot$type=='gene', c('seqid','start', 'end', 'gene_id', 'description', 'gene_biotype', 'strand')]
+colnames(annot) = c('chr', 'start', 'end', 'gene.id', 'description', 'gene.type', 'strand')
+annot$chr = sub('chr','',annot$chr)
 
 ## create genomic ranges objects
 cnv.ranges = GRanges(seqnames=cnv$chr, ranges=IRanges(start=as.numeric(cnv$start), end=as.numeric(cnv$end)))
@@ -140,10 +142,10 @@ cnv.annot = findOverlaps(cnv.ranges, annot.ranges)
 
 ## add annot info to cnv data based on overlap hits
 cnv$gene.id=NA
-cnv$gene.name=NA
+cnv$description=NA
 cnv$gene.type=NA
 cnv[queryHits(cnv.annot),'gene.id'] = annot[subjectHits(cnv.annot), 'gene.id']
-cnv[queryHits(cnv.annot),'gene.name'] = annot[subjectHits(cnv.annot), 'gene.name']
+cnv[queryHits(cnv.annot),'description'] = annot[subjectHits(cnv.annot), 'description']
 cnv[queryHits(cnv.annot),'gene.type'] = annot[subjectHits(cnv.annot), 'gene.type']
 
 ## write annotated cnv

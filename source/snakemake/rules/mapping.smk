@@ -13,7 +13,7 @@ rule run_bwa:
         SOURCEDIR+"/../envs/bwa.yaml"
     params:
         sample='{sample}',
-        indexseq=INDEXSEQ,
+        indexseq=paths.genome.fa,
         in_fa_str=expand(paths.rqual_filter.qfilter_fastq_paired, read=ENDS, paired=['P','U'])[0] + ' ' + expand(paths.rqual_filter.qfilter_fastq_paired, read=ENDS, paired=['P','U'])[2] if len(ENDS) == 2 else expand(paths.rqual_filter.qfilter_fastq_single, read=ENDS)[0],
         srcdir=SOURCEDIR,
         doencrypt=DOENCRYPT,
@@ -36,6 +36,44 @@ rule run_bwa:
           --doarchive {params.doarchive} --archive {params.archive} --cloud {params.cloud} \
           --output {output} \
           2>> {log}
+        '''
+
+## Perform post-alignment filtering on the sorted bam
+rule filter_bam:
+    input:
+        bam=rules.run_bwa.output,
+        blacklist=rules.retrieve_hg38_blacklist.output,
+        bed=rules.create_bed.output
+    output:
+        dup_bam=paths.bam.dup_bam,
+        metrics=paths.bam.metrics,
+        temp_bam=paths.bam.temp_bam,
+        filtered_bam=paths.bam.filtered_bam,
+        index=paths.bam.filtered_index
+    benchmark:
+        'benchmark/{sample}_filer_bam.tab'
+    conda:
+        SOURCEDIR+"/../envs/filter_bam.yaml"
+    shell:
+        '''
+          ## Mark duplicates and provide duplicate stats for the raw bam
+          ## NOTE: The command line for Picard is going to be updated in the future. Refer to link below.
+          ## https://github.com/broadinstitute/picard/wiki/Command-Line-Syntax-Transition-For-Users-(Pre-Transition)
+          picard MarkDuplicates I={input.bam} O={output.dup_bam} M={output.metrics}
+
+          ## Index the bam with duplicates marked
+          samtools index {output.dup_bam}
+
+          ## Remove reads that are unmapped, mate unmapped (for paired-end), not primary alignment,
+          ## fail platform/vendor quality checks, and PCR or optical duplicates. Also filters
+          ## reads aligned to chrM, chrUN, _random, chrEBV.
+          samtools view -b -F 1804 -L {input.bed} {output.dup_bam} -o {output.temp_bam}
+
+          ## Remove alignments that are located in the hg38 blacklist
+          bedtools intersect -v -abam {output.temp_bam} -b {input.blacklist} > {output.filtered_bam}
+         
+          ## Index the final filtered bam
+          samtools index {output.filtered_bam} -o {output.index}
         '''
 
 ## Index BAM

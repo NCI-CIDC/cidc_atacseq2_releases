@@ -105,13 +105,6 @@ NCORES  = int(config["ncores"])
 ## output sub folders
 SUBDIRS  = config["subdirs"]
 
-## Ensembl version number
-ENSEMBL = config["ensembl_version"]
-
-## Reference datasets
-INDEXSEQ = 'genome/Homo_sapiens.ensembl.version'+str(ENSEMBL)+'.genome.fa'
-ANNOTATIONS_GTF = 'annot/Homo_sapiens.ensembl.version'+str(ENSEMBL)+'.chr.gtf'
-
 ## Run fastqc?
 RUN_FASTQC = int(config["run_fastqc"])
 
