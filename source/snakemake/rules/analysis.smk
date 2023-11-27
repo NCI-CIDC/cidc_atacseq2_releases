@@ -1,8 +1,8 @@
 ## Run CNV analysis with QDNAseq
 rule cnv_analysis:
    input:
-       bam=rules.run_bwa.output,
-       idx=rules.index_bam.output
+       bam=rules.filter_bam.output.filtered_bam,
+       idx=rules.filter_bam.output.index
    output:
        bed=paths.cnv.bed,
        igv=paths.cnv.igv,
@@ -47,8 +47,8 @@ rule cnv_analysis:
 ## Run peak calling with MACS
 rule call_peaks:
     input:
-        bam=rules.run_bwa.output,
-        idx=rules.index_bam.output
+        bam=rules.filter_bam.output.filtered_bam,
+        idx=rules.filter_bam.output.index
     output:
         xls=paths.peak.xls,
         peak=paths.peak.peak_narrow if PEAK_MODE=='narrow' else paths.peak.peak_broad,
@@ -128,8 +128,8 @@ rule bdg_to_bw:
 ## Get peak metrics per sample with ChIPQC
 rule chipqc:
     input:
-        bam=rules.run_bwa.output,
-        idx=rules.index_bam.output,
+        bam=rules.filter_bam.output.filtered_bam,
+        idx=rules.filter_bam.output.index,
         peak=rules.call_peaks.output.peak,
     output:
         paths.chipqc.csv
