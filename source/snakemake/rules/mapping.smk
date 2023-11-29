@@ -76,6 +76,35 @@ rule filter_bam:
           samtools index {output.filtered_bam} -o {output.index}
         '''
 
+## Downsample the filtered bam for approximately 4 million reads
+rule sample_bam:
+    input:
+        filtered_bam=rules.filter_bam.output.filtered_bam,
+    output:
+        sampled_bam=paths.bam.sampled_bam,
+        index=paths.bam.sampled_index
+    benchmark:
+        'benchmark/{sample}_index_bam.tab'
+    conda:
+        SOURCEDIR+"/../envs/samtools.yaml"
+    shell:
+        '''
+          count=$(samtools view -c {input.filtered_bam})
+          frac=$(echo "4000000/$count" | bc -l)     
+          
+          ## If the read count of the bam is less than or equal to 4 million,
+          ## all the reads will be used. Otherwise, the bam will be randomly 
+          ## sampled for ~4 million reads.
+          if [ "$count" -le 4000000 ]; then
+              cp {input.filtered_bam} {output.sampled_bam}
+          else
+              ## Seed is arbitrarily set to 27 for consistency
+              samtools view -b -s 27$frac {input.filtered_bam} > {output.sampled_bam}
+          fi
+          ## Index the sampled bam
+          samtools index {output.sampled_bam} -o {output.index}
+        '''
+
 ## Index BAM
 rule index_bam:
     input:
