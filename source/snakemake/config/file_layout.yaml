@@ -30,6 +30,8 @@ bam:
     filtered_bam: "{sample}_filtered.bam"
     filtered_index: "{sample}_filtered.bam.bai"
     metrics: "{sample}_marked_duplicates_metrics.txt"
+    sampled_bam: "{sample}_sampled.bam"
+    sampled_index: "{sample}_sampled.bam.bai"
 
 rseqc:
     bamqc_txt: "{sample}_bam_qc.txt"

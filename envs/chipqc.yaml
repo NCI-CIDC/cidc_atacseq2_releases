@@ -5,10 +5,10 @@ channels:
 dependencies:
     - python==3.10.12
     - snakemake
-    - r-base
-    - bioconductor-chipqc
-    - bioconductor-txdb.hsapiens.ucsc.hg38.knowngene
-    - r-data.table
+    - r-base==4.3.2
+    - bioconductor-chipqc==1.36.0
+    - bioconductor-txdb.hsapiens.ucsc.hg38.knowngene==3.17.0
+    - r-data.table==1.14.8
     - openssl
     - gsutil
     - awscli

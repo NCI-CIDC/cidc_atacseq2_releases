@@ -128,8 +128,8 @@ rule bdg_to_bw:
 ## Get peak metrics per sample with ChIPQC
 rule chipqc:
     input:
-        bam=rules.filter_bam.output.filtered_bam,
-        idx=rules.filter_bam.output.index,
+        bam=rules.sample_bam.output.sampled_bam,
+        idx=rules.sample_bam.output.index,
         peak=rules.call_peaks.output.peak,
     output:
         paths.chipqc.csv

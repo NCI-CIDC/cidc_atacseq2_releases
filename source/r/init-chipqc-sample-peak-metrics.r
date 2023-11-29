@@ -20,7 +20,7 @@
 # Output:
 #############################################################################################################
 
-libs = c('ChIPQC', 'TxDb.Hsapiens.UCSC.hg38.knownGene','data.table');
+libs = c('ChIPQC', 'TxDb.Hsapiens.UCSC.hg38.knownGene','data.table', 'GenomicAlignments');
 #libs = c('ChIPQC', 'data.table');
 invisible(suppressPackageStartupMessages(lapply(libs, require, character.only=T)))
 
@@ -54,8 +54,28 @@ colnames(res.sample) = names(QCmetrics(chipqc.obj))
 res.sample$SampleID = sample
 res.sample = res.sample[,c(ncol(res.sample),1:(ncol(res.sample)-1))]
 
+## read in genomic alignments from bam
+align.obj = readGAlignments(bam)
+
+## reference https://github.com/imbforge/encodeChIPqc/blob/master/R/PBC.R for PBC calculation code
+## convert GAlignments object to data.table for fast aggregation
+aln = data.table(strand=as.factor(BiocGenerics::as.vector(strand(align.obj))),
+                 seqnames=as.factor(BiocGenerics::as.vector(seqnames(align.obj))),
+                 pos=ifelse(strand(align.obj) == "+", start(align.obj), end(align.obj)))
+
+## aggregate reads by position and count them
+readsPerPosition = aln[,list(count=.N), by=list(strand, seqnames, pos)]$count
+
+## number of genomic locations to which EXACTLY one unique mapping read maps
+n1 = sum(readsPerPosition == 1)
+## number of genomic locations to which AT LEAST one unique mapping read maps, i.e. the number of non-redundant, unique mapping reads
+nd = length(readsPerPosition)
+## PBC = positions with exactly 1 read / positions with at least 1 read
+pbc = n1 / nd
+
+## add PBC values to the result dataframe
+res.sample[c("N1", "Nd", "PBC")] = list(n1, nd, pbc)
+
 ## write out sample results
 write.table(res.sample, paste0(predir,'/chipqc/',sample,'_chipqc.csv'), sep=',', quote=F, row.names=F, col.names=T)
 #system(paste0('gzip ',predir,'/chipqc/',sample,'_chipqc.csv'))
-
-
