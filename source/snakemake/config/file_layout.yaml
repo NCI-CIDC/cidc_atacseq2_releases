@@ -9,7 +9,7 @@ genome:
     bed: "GCA_000001405.15_GRCh38_no_alt_analysis_set_filtered.bed"
 annot:
     gtf: "GCA_000001405.15_GRCh38_full_analysis_set.refseq_annotation.gtf"
-
+    bed: "GCA_000001405.15_GRCh38_full_analysis_set.refseq_annotation.bed"
 
 ## INGEST
 input:
@@ -82,6 +82,15 @@ motif:
     summit: "summit/{sample}/"
     broad_peak: "broad_peak/{sample}/"    
 
+targets: 
+	narrowPeak_bed: "{sample}_sorted_narrowPeaks.bed"
+	narrowPeak_1k: "{sample}_gene_score_1k_narrowPeak.txt"
+	narrowPeak_10k: "{sample}_gene_score_10k_narrowPeak.txt"
+	narrowPeak_100k: "{sample}_gene_score_100k_narrowPeak.txt"
+	broadPeak_bed: "{sample}_sorted_Broadpeaks.bed"
+	broadPeak_1k: "{sample}_gene_score_1k_broadPeak.txt"
+	broadPeak_10k: "{sample}_gene_score_10k_broadPeak.txt"
+	broadPeak_100k: "{sample}_gene_score_100k_broadPeak.txt"
 
 ## DOWNSTREAM ANALYSIS ## TODO
 #gene_target:

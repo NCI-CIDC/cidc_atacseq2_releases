@@ -254,4 +254,4 @@ include: "./rules/analysis.smk"
 include: "./rules/format_peaks.smk"
 include: "./rules/track.smk"
 include: "./rules/motif.smk"
-
+include: "./rules/targets.smk"
