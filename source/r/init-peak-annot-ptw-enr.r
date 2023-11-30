@@ -68,12 +68,12 @@ write.table(annot.stat, paste0(predir,'/peak/',sample,'_peaks_annot_stat.csv'), 
 write.table(annot.tab, paste0(predir,'/peak/',sample,'_peaks_annot.csv'), sep=',', quote=F, row.names=F, col.names=T)
 
 ## barplot of genomic feature representation
-pdf(file = paste0(predir,'/peak/',sample,'_peaks_annot_bar.pdf'))
+png(file = paste0(predir,'/peak/',sample,'_peaks_annot_bar.png'))
 plotAnnoBar(annot.obj, xlab=sample)
 garb=dev.off()
 
 ## barplot of distribution of TF-binding loci relative to TSS
-pdf(file = paste0(predir,'/peak/',sample,'_peaks_annot_bar_tss.pdf'))
+png(file = paste0(predir,'/peak/',sample,'_peaks_annot_bar_tss.png'))
 plotDistToTSS(annot.obj, title="Distribution of transcription factor-binding loci \n relative to TSS", xlab=sample)
 garb=dev.off()
 
@@ -95,7 +95,7 @@ ego = enrichGO(gene = annot.tab$ENTREZID,
 ego.summary = data.frame(ego)
 write.table(ego.summary, paste0(predir,'/ptw/',sample,'_gobp_ptw.csv'), sep=',', quote=F, row.names=F, col.names=T)
 ## dot plot
-pdf(file = paste0(predir,'/ptw/',sample,'_gobp_ptw_dot.pdf'))
+png(file = paste0(predir,'/ptw/',sample,'_gobp_ptw_dot.png'))
 dotplot(ego, showCategory=20, font.size=10, title = paste0("GO BP Enrichment Analysis - ",sample))
 garb=dev.off()
 
@@ -108,6 +108,6 @@ ekegg = enrichKEGG(gene = annot.tab$ENTREZID,
 ekegg.summary = data.frame(ekegg)
 write.table(ekegg.summary, paste0(predir,'/ptw/',sample,'_kegg_ptw.csv'), sep=',', quote=F, row.names=F, col.names=T)
 ## dot plot
-pdf(file = paste0(predir,'/ptw/',sample,'_kegg_ptw_dot.pdf'))
+png(file = paste0(predir,'/ptw/',sample,'_kegg_ptw_dot.png'))
 dotplot(ekegg, showCategory=20,  font.size=10, title = paste0("KEGG Enrichment Analysis - ",sample))
 garb=dev.off()

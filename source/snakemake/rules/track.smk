@@ -14,7 +14,7 @@ rule genome_track:
         SOURCEDIR + "/../envs/genome_track.yaml"
     params:
         sample='{sample}',
-        track_region='chr1:500000-750000',
+        track_region=TRACK_REGION,
         annot_gtf=paths.annot.gtf,
         output_joined=','.join([paths.track.ini, paths.track.png]),
         predir=PREDIR,

@@ -110,6 +110,7 @@ RUN_FASTQC = int(config["run_fastqc"])
 
 ## Run genome tracks?
 RUN_GENOME_TRACK = int(config["run_genome_track"])
+TRACK_REGION = str(config["track_region"])
 
 ## Save intermediate files?
 REMOVEINTFILES = not config["saveintlocalfiles"]
@@ -223,6 +224,10 @@ onsuccess:
     ## add chipqc output to results to enc and archive if needed
     merged_results.append(['analysis/report/'+f for f in os.listdir('analysis/report')])
     merged_results.append('analysis/data/all_chipqc.csv.gz')
+
+    ## knit rmarkdown html report
+    shell('Rscript --vanilla '+SOURCEDIR+'/r/run-report.r '+SOURCEDIR+'/r/cidc_atac-report-slidy.Rmd '+PREDIR+' '+DATADIR+'/../report')
+    merged_results.append('analysis/report/cidc_atac-report-slidy.html')
 
     ## Encrypt and/or upload main results if needed
     if DOENCRYPT:
