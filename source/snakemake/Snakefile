@@ -227,6 +227,7 @@ onsuccess:
 
     ## knit rmarkdown html report
     shell('Rscript --vanilla '+SOURCEDIR+'/r/run-report.r '+SOURCEDIR+'/r/cidc_atac-report-slidy.Rmd '+PREDIR+' '+DATADIR+'/../report')
+    merged_results.append('analysis/report/cidc_atac-report-slidy.html')
 
     ## Encrypt and/or upload main results if needed
     if DOENCRYPT:
