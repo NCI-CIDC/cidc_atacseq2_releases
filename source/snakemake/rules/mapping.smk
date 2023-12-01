@@ -248,6 +248,8 @@ rule bam_gc:
 
         ## R script to get txt output info
         echo "out=as.vector(summary(gc));dta = data.frame('{params.sample}',out[1],out[2],out[3],out[4],out[5],out[6]);write.table(dta,file='{output.txt}',sep="\t",row.names=F,col.names=F,quote=F);" >> {output.r}
+        sed -i "s/pdf/png/g" {output.r} 
+        sed -i 's/main=""/main="{params.sample}"/g' {output.r} 
         Rscript --vanilla --quiet {output.r}
 
         ## encrypt and archive if needed

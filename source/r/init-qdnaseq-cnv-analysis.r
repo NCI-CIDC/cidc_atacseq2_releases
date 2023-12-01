@@ -56,7 +56,7 @@ bins <- getBinAnnotations(binSize=15, genome="hg38")
 readCounts <- binReadCounts(bins, bamfiles=paste0(predir,'/bam/',sample,'.bam'))
 
 ## Plot raw copy number profile (read counts across the genome) and highlight bins to remove with default filtering
-pdf(file = paste0(predir,'/cnv/',sample,'_cn_profile_pre.pdf'))
+png(file = paste0(predir,'/cnv/',sample,'_cn_profile_pre.png'))
 plot(readCounts, logTransform=FALSE)
 highlightFilters(readCounts, logTransform=FALSE, residual=TRUE, blacklist=TRUE)
 garb=dev.off()
@@ -65,7 +65,7 @@ garb=dev.off()
 readCountsFiltered <- applyFilters(readCounts, residual=TRUE, blacklist=TRUE, chromosomes = c("Y", "MT"))
 
 ## plot median read counts as a function of GC content and mappability
-pdf(file = paste0(predir,'/cnv/',sample,'_med_read_counts.pdf'))
+png(file = paste0(predir,'/cnv/',sample,'_med_read_counts.png'))
 isobarPlot(readCountsFiltered)
 garb=dev.off()
 
@@ -73,7 +73,7 @@ garb=dev.off()
 readCountsFiltered <- estimateCorrection(readCountsFiltered)
 
 ## plot for the relationship between the observed standard deviation in the data and its read depth
-pdf(file = paste0(predir,'/cnv/',sample,'_std_read_depth.pdf'))
+png(file = paste0(predir,'/cnv/',sample,'_std_read_depth.png'))
 noisePlot(readCountsFiltered)
 garb=dev.off()
 
@@ -83,7 +83,7 @@ copyNumbersNormalized <- normalizeBins(copyNumbers)
 copyNumbersSmooth <- smoothOutlierBins(copyNumbersNormalized)
 
 ## Copy number profile after correcting for GC content and mappability
-pdf(file = paste0(predir,'/cnv/',sample,'_cn_profile_post.pdf'))
+png(file = paste0(predir,'/cnv/',sample,'_cn_profile_post.png'))
 plot(copyNumbersSmooth)
 garb=dev.off()
 
@@ -96,7 +96,7 @@ copyNumbersSegmented <- segmentBins(copyNumbersSmooth, transformFun="sqrt")
 copyNumbersSegmented <- normalizeSegmentedBins(copyNumbersSegmented)
 
 ## Copy number profile of segments
-pdf(file = paste0(predir,'/cnv/',sample,'_cn_profile_segment.pdf'))
+png(file = paste0(predir,'/cnv/',sample,'_cn_profile_segment.png'))
 plot(copyNumbersSegmented)
 garb=dev.off()
 
@@ -104,7 +104,7 @@ garb=dev.off()
 copyNumbersCalled <- callBins(copyNumbersSegmented)
 
 ## Copy number profile of segments
-pdf(file = paste0(predir,'/cnv/',sample,'_cn_profile_calls.pdf'))
+png(file = paste0(predir,'/cnv/',sample,'_cn_profile_calls.png'))
 plot(copyNumbersCalled)
 garb=dev.off()
 
