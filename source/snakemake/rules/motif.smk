@@ -22,7 +22,7 @@ rule configure_hg38:
 rule find_motifs_narrowPeak:
     input:
         hg38_path=rules.configure_hg38.output,
-        filtered_sorted_narrowPeak=paths.format_peaks.filtered_sorted_narrowPeak
+        filtered_sorted_narrowPeak=paths.peak.filtered_sorted_narrowPeak
     output:
         directory(paths.motif.narrow_peak)
     benchmark:
@@ -51,7 +51,7 @@ rule find_motifs_narrowPeak:
 rule find_motifs_summits:
     input:
         hg38_path=rules.configure_hg38.output,
-        filtered_sorted_summits=paths.format_peaks.filtered_sorted_summits
+        filtered_sorted_summits=paths.peak.filtered_sorted_summits
     output:
         directory(paths.motif.summit)
     benchmark:
@@ -80,7 +80,7 @@ rule find_motifs_summits:
 rule find_motifs_broadPeak:
     input:
         hg38_path=rules.configure_hg38.output,
-        filtered_sorted_broadPeak=paths.format_peaks.filtered_sorted_broadPeak
+        filtered_sorted_broadPeak=paths.peak.filtered_sorted_broadPeak
     output:
         directory(paths.motif.broad_peak)
     benchmark:

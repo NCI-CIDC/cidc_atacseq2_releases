@@ -1,65 +1,38 @@
-# Sort summits.bed from rule call_peaks by the fifth column (qvalue)
-rule sort_summits:
-    input:
-        summits=rules.call_peaks.output.extra
-    output:
-        sorted_summits=paths.format_peaks.summits
-    shell:
-        "sort -r -n -k 5 {input} > {output}"
-
-# Format file for HOMER analysis by selecting the top 5k peaks and prepend column 1 values with "chr"
+# Sort summits.bed from rule call_peaks by the fifth column (qvalue) and filter for top 5k summits
 rule filter_5k_sorted_summits:
     input:
-        sorted_summits=paths.format_peaks.summits
+        summits=paths.peak.extra_narrow
     output:
-        filtered_sorted_summits=paths.format_peaks.filtered_sorted_summits,
-        temp_filtered_sorted_summits=temp(paths.format_peaks.filtered_sorted_summits+".temp")
+        sorted_summits=paths.peak.summits,
+        filtered_summits=paths.peak.filtered_sorted_summits
     shell:
-        """
-        head -n 5000 {input} > {output.temp_filtered_sorted_summits}
-        awk -F'\t\' 'BEGIN {{OFS = "\t"}} {{ $1 = "chr" $1; print }}' {output.temp_filtered_sorted_summits} > {output.filtered_sorted_summits}
-        """
+        '''
+          sort -r -n -k 5 {input.summits} > {output.sorted_summits}
+          head -n 5000 {output.sorted_summits} > {output.filtered_summits}
+        '''
 
-# Sort peak.narrowPeak from rule call_peaks by the ninth column (qvalue)
-rule sort_narrowPeak:
+# Sort peak.narrowPeak from rule call_peaks by the ninth column (qvalue) and filter for top 5k peaks
+rule filter_5k_sorted_narrowPeak:
     input:
         narrowPeak=paths.peak.peak_narrow
     output:
-        sorted_narrowPeak=paths.format_peaks.narrowPeak
+        sorted_narrowPeak=paths.peak.narrowPeak,
+        filtered_narrowPeak=paths.peak.filtered_sorted_narrowPeak
     shell:
-       "sort -r -n -k 9 {input} > {output}"
+        '''
+          sort -r -n -k 9 {input.narrowPeak} > {output.sorted_narrowPeak}
+          head -n 5000 {output.sorted_narrowPeak} > {output.filtered_narrowPeak}
+        '''
 
-# Format file for HOMER analysis by selecting the top 5k peaks and prepend column 1 values with "chr"
-rule filter_5k_sorted_narrowPeak:
-    input:
-        sorted_narrowPeak=paths.format_peaks.narrowPeak
-    output:
-        filtered_sorted_narrowPeak=paths.format_peaks.filtered_sorted_narrowPeak,
-        temp_filtered_sorted_narrowPeak=temp(paths.format_peaks.filtered_sorted_narrowPeak+".temp")
-    shell:
-        """
-        head -n 5000 {input} > {output.temp_filtered_sorted_narrowPeak}
-        awk -F'\t\' 'BEGIN {{OFS = "\t"}} {{ $1 = "chr" $1; print }}' {output.temp_filtered_sorted_narrowPeak} > {output.filtered_sorted_narrowPeak}
-        """
-
-# Sort peak.broadPeak from rule call_peaks by the ninth column (qvalue)
-rule sort_broadPeak:
+# Sort peak.broadPeak from rule call_peaks by the ninth column (qvalue) and filter for top 5k peaks
+rule filter_5k_sorted_broadPeak:
     input:
         broadPeak=paths.peak.peak_broad
     output:
-        sorted_broadPeak=paths.format_peaks.broadPeak
+        sorted_broadPeak=paths.peak.broadPeak,
+        filtered_broadPeak=paths.peak.filtered_sorted_broadPeak
     shell:
-       "sort -r -n -k 9 {input} > {output}"
-
-# Format file for HOMER analysis by selecting the top 5k peaks and prepend column 1 values with "chr"
-rule filter_5k_sorted_broadPeak:
-    input:
-        sorted_broadPeak=paths.format_peaks.broadPeak
-    output:
-        filtered_sorted_broadPeak=paths.format_peaks.filtered_sorted_broadPeak,
-        temp_filtered_sorted_broadPeak=temp(paths.format_peaks.filtered_sorted_broadPeak+".temp")
-    shell:
-        """
-        head -n 5000 {input} > {output.temp_filtered_sorted_broadPeak}
-        awk -F'\t\' 'BEGIN {{OFS = "\t"}} {{ $1 = "chr" $1; print }}' {output.temp_filtered_sorted_broadPeak} > {output.filtered_sorted_broadPeak}
-        """
+       '''
+         sort -r -n -k 9 {input.broadPeak} > {output.sorted_broadPeak}
+         head -n 5000 {output.sorted_broadPeak} > {output.filtered_broadPeak}
+       '''

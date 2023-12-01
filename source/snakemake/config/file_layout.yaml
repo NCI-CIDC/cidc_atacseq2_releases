@@ -59,8 +59,6 @@ peak:
     bw: "{sample}_peaks.bw"
     annot_stat: "{sample}_peaks_annot_stat.csv"
     annot_tab: "{sample}_peaks_annot.csv"
-
-format_peaks:
     summits: "{sample}_sorted_summits.bed"
     filtered_sorted_summits: "{sample}_5k_sorted_summits.bed"
     narrowPeak: "{sample}_sorted_peaks.narrowPeak"
@@ -85,14 +83,14 @@ motif:
     broad_peak: "broad_peak/{sample}/"    
 
 targets: 
-	narrowPeak_bed: "{sample}_sorted_narrowPeaks.bed"
-	narrowPeak_1k: "{sample}_gene_score_1k_narrowPeak.txt"
-	narrowPeak_10k: "{sample}_gene_score_10k_narrowPeak.txt"
-	narrowPeak_100k: "{sample}_gene_score_100k_narrowPeak.txt"
-	broadPeak_bed: "{sample}_sorted_Broadpeaks.bed"
-	broadPeak_1k: "{sample}_gene_score_1k_broadPeak.txt"
-	broadPeak_10k: "{sample}_gene_score_10k_broadPeak.txt"
-	broadPeak_100k: "{sample}_gene_score_100k_broadPeak.txt"
+    narrowPeak_bed: "{sample}_sorted_narrowPeaks.bed"
+    narrowPeak_1k: "{sample}_gene_score_1k_narrowPeak.txt"
+    narrowPeak_10k: "{sample}_gene_score_10k_narrowPeak.txt"
+    narrowPeak_100k: "{sample}_gene_score_100k_narrowPeak.txt"
+    broadPeak_bed: "{sample}_sorted_broadPeaks.bed"
+    broadPeak_1k: "{sample}_gene_score_1k_broadPeak.txt"
+    broadPeak_10k: "{sample}_gene_score_10k_broadPeak.txt"
+    broadPeak_100k: "{sample}_gene_score_100k_broadPeak.txt"
 
 ## DOWNSTREAM ANALYSIS ## TODO
 #gene_target:
