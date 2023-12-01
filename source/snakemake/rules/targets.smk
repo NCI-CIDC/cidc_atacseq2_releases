@@ -5,12 +5,13 @@ rule annot_gtf2bed:
         output:
             bed=paths.annot.bed
         shell:
-            "awk 'OFS="\t" {if ($3=="gene") {print $1,$4-1,$5,"1",$10,$7,$4-1,$5}}' {input} | tr -d '";' > {output}"
-
+           '''
+             awk 'OFS="\t" {{if ($3=="gene") {{print $1,$4-1,$5,"1",$10,$7,$4-1,$5}}}}' {input} | tr -d '";' > {output}
+           '''
 ## convert narrow peak to BED format
 rule targets_narrowPeakToBed:
         input:
-            narrow_peak_sorted=paths.format_peaks.narrowPeak
+            narrow_peak_sorted=paths.peak.narrowPeak
         output:
             narrow_peak_bed=paths.targets.narrowPeak_bed
         shell:
@@ -19,46 +20,46 @@ rule targets_narrowPeakToBed:
 ## report all gene scores with a decay rate of 1K
 rule targets_getNarrowPeaksRPScore1k:
     input:
-        narrow_peak_bed=paths.targets.narrowPeak_bed
+        narrow_peak_bed=paths.targets.narrowPeak_bed,
+        anot_bed=paths.annot.bed
     output:
         gene_targets_1k=paths.targets.narrowPeak_1k
     params:
-        anot_bed=paths.annot.bed,
         decay=1000,
         srcdir=SOURCEDIR
     shell:
-        "python3 {params.srcdir}/python/targets_RegPotential_Version2.py -a {params.anot_bed} -d {params.decay} -p {input} -n {output}"
+        "python3 {params.srcdir}/python/targets_RegPotential_Version2.py -p {input.narrow_peak_bed} -a {input.anot_bed} -d {params.decay} -n {output}"
 
 ## report all gene scores with a decay rate of 10K
 rule targets_getNarrowPeaksRPScore10k:
     input:
-        narrow_peak_bed=paths.targets.narrowPeak_bed
+        narrow_peak_bed=paths.targets.narrowPeak_bed,
+        anot_bed=paths.annot.bed
     output:
         gene_targets_1k=paths.targets.narrowPeak_10k
     params:
-        anot_bed=paths.annot.bed,
         decay=10000,
         srcdir=SOURCEDIR
     shell:
-        "python3 {params.srcdir}/python/targets_RegPotential_Version2.py -a {params.anot_bed} -d {params.decay} -p {input} -n {output}"
+        "python3 {params.srcdir}/python/targets_RegPotential_Version2.py -p {input.narrow_peak_bed} -a {input.anot_bed} -d {params.decay} -n {output}"
 
 ## report all gene scores with a decay rate of 100K
 rule targets_getNarrowPeaksRPScore100k:
     input:
-        narrow_peak_bed=paths.targets.narrowPeak_bed
+        narrow_peak_bed=paths.targets.narrowPeak_bed,
+        anot_bed=paths.annot.bed
     output:
         gene_targets_1k=paths.targets.narrowPeak_100k
     params:
-        anot_bed=paths.annot.bed,
         decay=100000,
         srcdir=SOURCEDIR
     shell:
-        "python3 {params.srcdir}/python/targets_RegPotential_Version2.py -a {params.anot_bed} -d {params.decay} -p {input} -n {output}"
+        "python3 {params.srcdir}/python/targets_RegPotential_Version2.py -p {input.narrow_peak_bed} -a {input.anot_bed} -d {params.decay} -n {output}"
 
 ## convert broad peak to BED format
 rule targets_broadPeakToBed:
         input:
-            broad_peak_sorted=paths.format_peaks.broadPeak
+            broad_peak_sorted=paths.peak.broadPeak
         output:
             broad_peak_bed=paths.targets.broadPeak_bed
         shell:
@@ -67,38 +68,38 @@ rule targets_broadPeakToBed:
 ## report all gene scores with a decay rate of 1K
 rule targets_getBroadPeaksRPScore1k:
     input:
-        broad_peak_bed=paths.targets.broadPeak_bed
+        broad_peak_bed=paths.targets.broadPeak_bed,
+        anot_bed=paths.annot.bed
     output:
-        gene_targets_1k=paths.targets.narrowPeak_1k
+        gene_targets_1k=paths.targets.broadPeak_1k
     params:
-        anot_bed=paths.annot.bed,
         decay=1000,
         srcdir=SOURCEDIR
     shell:
-        "python3 {params.srcdir}/python/targets_RegPotential_Version2.py -a {params.anot_bed} -d {params.decay} -p {input} -n {output}"
+        "python3 {params.srcdir}/python/targets_RegPotential_Version2.py -p {input.broad_peak_bed} -a {input.anot_bed} -d {params.decay} -n {output}"
 
 ## report all gene scores with a decay rate of 10K
 rule targets_getBroadPeaksRPScore10k:
     input:
-        broad_peak_bed=paths.targets.broadPeak_bed
+        broad_peak_bed=paths.targets.broadPeak_bed,
+        anot_bed=paths.annot.bed
     output:
-        gene_targets_1k=paths.targets.narrowPeak_10k
+        gene_targets_1k=paths.targets.broadPeak_10k
     params:
-        anot_bed=paths.annot.bed,
         decay=10000,
         srcdir=SOURCEDIR
     shell:
-        "python3 {params.srcdir}/python/targets_RegPotential_Version2.py -a {params.anot_bed} -d {params.decay} -p {input} -n {output}"
+        "python3 {params.srcdir}/python/targets_RegPotential_Version2.py -p {input.broad_peak_bed} -a {input.anot_bed} -d {params.decay} -n {output}"
 
 ## report all gene scores with a decay rate of 100K
 rule targets_getBroadPeaksRPScore100k:
     input:
-        broad_peak_bed=paths.targets.broadPeak_bed
+        broad_peak_bed=paths.targets.broadPeak_bed,
+        anot_bed=paths.annot.bed
     output:
-        gene_targets_1k=paths.targets.narrowPeak_100k
+        gene_targets_1k=paths.targets.broadPeak_100k
     params:
-        anot_bed=paths.annot.bed,
         decay=100000,
         srcdir=SOURCEDIR
     shell:
-        "python3 {params.srcdir}/python/targets_RegPotential_Version2.py -a {params.anot_bed} -d {params.decay} -p {input} -n {output}"
+        "python3 {params.srcdir}/python/targets_RegPotential_Version2.py -p {input.broad_peak_bed} -a {input.anot_bed} -d {params.decay} -n {output}"
