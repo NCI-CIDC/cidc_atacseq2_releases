@@ -3,11 +3,7 @@ channels:
     - conda-forge
     - bioconda
 dependencies:
-    - python==3.10.12
-    - snakemake
-    - bioconductor-chipseeker
-    - bioconductor-clusterprofiler
-    - bioconductor-org.hs.eg.db
-    - openssl
-    - gsutil
-    - awscli
+    - r-base==4.3.2
+    - bioconductor-chipseeker==1.36.0
+    - bioconductor-clusterprofiler==4.8.1
+    - bioconductor-org.hs.eg.db==3.17.0

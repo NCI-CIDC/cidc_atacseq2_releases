@@ -2,4 +2,4 @@ name: bdg_to_bw
 channels:
     - bioconda
 dependencies:
-    - ucsc-bedgraphtobigwig
+    - ucsc-bedgraphtobigwig==366

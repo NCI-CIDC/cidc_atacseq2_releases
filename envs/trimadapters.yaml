@@ -5,4 +5,4 @@ channels:
 dependencies:
     - cutadapt==4.4
     - python==3.10.12
-    - snakemake
+    - snakemake==7.32.4
