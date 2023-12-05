@@ -4,10 +4,5 @@ channels:
     - bioconda
 dependencies:
     - fastqc==0.12.1
-    - python==3.10.12
-    - snakemake
-    - unzip
-    - tar
-    - openssl
-    - gsutil
-    - awscli
+    - unzip==6.0
+    - tar==1.34

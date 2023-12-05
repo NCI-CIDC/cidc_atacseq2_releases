@@ -21,7 +21,6 @@
 # Output:
 #############################################################################################################
 
-#libs = c('openxlsx','stringr','biomaRt','yaml');
 libs = c('openxlsx','stringr','yaml');
 invisible(suppressPackageStartupMessages(lapply(libs, require, character.only=T)))
 

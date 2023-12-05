@@ -4,8 +4,3 @@ channels:
     - bioconda
 dependencies:
     - macs2==2.2.9.1
-    - python==3.10.12
-    - snakemake
-    - openssl
-    - gsutil
-    - awscli
