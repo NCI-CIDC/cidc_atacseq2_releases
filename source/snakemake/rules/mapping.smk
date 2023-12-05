@@ -14,28 +14,13 @@ rule run_bwa:
     params:
         sample='{sample}',
         indexseq=paths.genome.fa,
-        in_fa_str=expand(paths.rqual_filter.qfilter_fastq_paired, read=ENDS, paired=['P','U'])[0] + ' ' + expand(paths.rqual_filter.qfilter_fastq_paired, read=ENDS, paired=['P','U'])[2] if len(ENDS) == 2 else expand(paths.rqual_filter.qfilter_fastq_single, read=ENDS)[0],
-        srcdir=SOURCEDIR,
-        doencrypt=DOENCRYPT,
-        openssl=OPENSSL,
-        encrypt_pass=ENCRYPT_PASS,
-        hash=HASH,
-        doarchive=DOARCHIVE,
-        archive=ARCHIVE,
-        cloud=CLOUD
+        in_fa_str=expand(paths.rqual_filter.qfilter_fastq_paired, read=ENDS, paired=['P','U'])[0] + ' ' + expand(paths.rqual_filter.qfilter_fastq_paired, read=ENDS, paired=['P','U'])[2] if len(ENDS) == 2 else expand(paths.rqual_filter.qfilter_fastq_single, read=ENDS)[0]
     priority: 4
     threads: max(1,min(8,NCORES))
     shell:
         '''
           echo "bwa mem -t {threads} {params.indexseq} {params.in_fa_str} | samtools view -@ {threads} -Sbh | samtools sort -@ {threads} > {output}" | tee {log}
           bwa mem -t {threads} {params.indexseq} {params.in_fa_str} | samtools view -@ {threads} -Sbh | samtools sort -@ {threads} > {output} 2>> {log}
-
-          ## encrypt and archive if needed
-          python3 {params.srcdir}/python/init-encrypt-archive.py --src {params.srcdir}\
-          --doencrypt {params.doencrypt} --openssl {params.openssl} --encrypt-pass {params.encrypt_pass} --hash {params.hash} \
-          --doarchive {params.doarchive} --archive {params.archive} --cloud {params.cloud} \
-          --output {output} \
-          2>> {log}
         '''
 
 ## Perform post-alignment filtering on the sorted bam
@@ -143,15 +128,7 @@ rule fastqc:
         sample='{sample}',
         fq_base='fastqc/{sample}_fastqc',
         fq_zip='fastqc/{sample}_fastqc.zip',
-        fq_html='fastqc/{sample}_fastqc.html',
-        srcdir=SOURCEDIR,
-        doencrypt=DOENCRYPT,
-        openssl=OPENSSL,
-        encrypt_pass=ENCRYPT_PASS,
-        hash=HASH,
-        doarchive=DOARCHIVE,
-        archive=ARCHIVE,
-        cloud=CLOUD
+        fq_html='fastqc/{sample}_fastqc.html'
     priority: 1
     threads: 1
     shell:
@@ -162,17 +139,9 @@ rule fastqc:
           ## unzip, remove zipped results, HTML duplicate, and tarball results
           unzip -qq {params.fq_zip} -d {params.fq_base} && tar -zcf {output} {params.fq_base} && rm -r {params.fq_zip} {params.fq_html} {params.fq_base}
 
-          ## encrypt and archive if needed
-          python3 {params.srcdir}/python/init-encrypt-archive.py --src {params.srcdir}\
-          --doencrypt {params.doencrypt} --openssl {params.openssl} --encrypt-pass {params.encrypt_pass} --hash {params.hash} \
-          --doarchive {params.doarchive} --archive {params.archive} --cloud {params.cloud} \
-          --output {output} \
-          2>> {log}
-
           ## export rule env details
           conda env export --no-builds > info/fastqc.info
         '''
-
 
 ## Run RSEQC bam_stat.py
 rule bam_qc:
@@ -189,30 +158,14 @@ rule bam_qc:
         SOURCEDIR+"/../envs/rseqc.yaml"
     params:
         sample='{sample}',
-        rseqdir=RSEQC,
-        srcdir=SOURCEDIR,
-        doencrypt=DOENCRYPT,
-        openssl=OPENSSL,
-        encrypt_pass=ENCRYPT_PASS,
-        hash=HASH,
-        doarchive=DOARCHIVE,
-        archive=ARCHIVE,
-        cloud=CLOUD
+        rseqdir=RSEQC
     priority: 1
     threads: 1
     shell:
         '''
           echo "{params.rseqdir}bam_stat.py -i {input.bam} > {output}" | tee {log}
           {params.rseqdir}bam_stat.py -i {input.bam} > {output} 2>> {log}
-
-          ## encrypt and archive if needed
-          python3 {params.srcdir}/python/init-encrypt-archive.py --src {params.srcdir}\
-          --doencrypt {params.doencrypt} --openssl {params.openssl} --encrypt-pass {params.encrypt_pass} --hash {params.hash} \
-          --doarchive {params.doarchive} --archive {params.archive} --cloud {params.cloud} \
-          --output {output} \
-          2>> {log}
         '''
-
 
 ## Run RSEQC read_gc.py
 rule bam_gc:
@@ -230,15 +183,7 @@ rule bam_gc:
         SOURCEDIR+"/../envs/rseqc.yaml"
     params:
         sample='{sample}',
-        rseqdir=RSEQC,
-        srcdir=SOURCEDIR,
-        doencrypt=DOENCRYPT,
-        openssl=OPENSSL,
-        encrypt_pass=ENCRYPT_PASS,
-        hash=HASH,
-        doarchive=DOARCHIVE,
-        archive=ARCHIVE,
-        cloud=CLOUD
+        rseqdir=RSEQC
     priority: 1
     threads: 1
     shell:
@@ -251,13 +196,6 @@ rule bam_gc:
         sed -i "s/pdf/png/g" {output.r} 
         sed -i 's/main=""/main="{params.sample}"/g' {output.r} 
         Rscript --vanilla --quiet {output.r}
-
-        ## encrypt and archive if needed
-        python3 {params.srcdir}/python/init-encrypt-archive.py --src {params.srcdir}\
-        --doencrypt {params.doencrypt} --openssl {params.openssl} --encrypt-pass {params.encrypt_pass} --hash {params.hash} \
-        --doarchive {params.doarchive} --archive {params.archive} --cloud {params.cloud} \
-        --output {output.txt} \
-        2>> {log}
 
         ## export rule env details
         conda env export --no-builds > info/rseqc.info

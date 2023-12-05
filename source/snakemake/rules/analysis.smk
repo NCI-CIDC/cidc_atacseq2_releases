@@ -15,30 +15,15 @@ rule cnv_analysis:
        SOURCEDIR+"/../envs/cnv_analysis.yaml"
    params:
        sample='{sample}',
-       predir=PREDIR,
-       annot_gtf=paths.annot.gtf,
-       output_joined=','.join([paths.cnv.bed, paths.cnv.igv, paths.cnv.csv]),
        srcdir=SOURCEDIR,
-       doencrypt=DOENCRYPT,
-       openssl=OPENSSL,
-       encrypt_pass=ENCRYPT_PASS,
-       hash=HASH,
-       doarchive=DOARCHIVE,
-       archive=ARCHIVE,
-       cloud=CLOUD
+       predir=PREDIR,
+       annot_gtf=paths.annot.gtf
    priority: 1
    threads: 1
    shell:
        '''
          echo "Rscript --vanilla {params.srcdir}/r/init-qdnaseq-cnv-analysis.r {params.predir} {params.sample} {params.annot_gtf}" | tee {log}
          Rscript --vanilla {params.srcdir}/r/init-qdnaseq-cnv-analysis.r {params.predir} {params.sample} {params.annot_gtf} 2>> {log}
-
-         ## encrypt and archive if needed
-         python3 {params.srcdir}/python/init-encrypt-archive.py --src {params.srcdir}\
-         --doencrypt {params.doencrypt} --openssl {params.openssl} --encrypt-pass {params.encrypt_pass} --hash {params.hash} \
-         --doarchive {params.doarchive} --archive {params.archive} --cloud {params.cloud} \
-         --output {params.output_joined} \
-         2>> {log}
 
          ## export rule env details
          conda env export --no-builds > info/cnv_analysis.info
@@ -63,34 +48,17 @@ rule call_peaks:
         SOURCEDIR+"/../envs/call_peaks.yaml"
     params:
         sample='{sample}',
-        macs=MACS,
         format='BAMPE' if len(ENDS)==2 else 'BAM',
         genome='hs',
         fdr=PEAK_FDR,
-        peak_mode_str=PEAK_MODE_STR,
-        output_joined=','.join([paths.peak.xls, paths.peak.peak_narrow if PEAK_MODE=='narrow' else paths.peak.peak_broad, paths.peak.extra_narrow if PEAK_MODE=='narrow' else paths.peak.extra_broad, paths.peak.pileup_bdg, paths.peak.lambda_bdg]),
-        srcdir=SOURCEDIR,
-        doencrypt=DOENCRYPT,
-        openssl=OPENSSL,
-        encrypt_pass=ENCRYPT_PASS,
-        hash=HASH,
-        doarchive=DOARCHIVE,
-        archive=ARCHIVE,
-        cloud=CLOUD
+        peak_mode_str=PEAK_MODE_STR
     priority: 1
     threads: 1
     shell:
         '''
           ## call peaks with macs
-          echo "{params.macs} callpeak -f {params.format} -g {params.genome} -t {input.bam} --outdir peak -n {params.sample} -q {params.fdr} {params.peak_mode_str} --keep-dup all --bdg" | tee {log}
-          {params.macs} callpeak -f {params.format} -g {params.genome} -t {input.bam} --outdir peak -n {params.sample} -q {params.fdr} {params.peak_mode_str} --keep-dup all --bdg 2>> {log}
-
-          ## encrypt and archive if needed
-          python3 {params.srcdir}/python/init-encrypt-archive.py --src {params.srcdir}\
-          --doencrypt {params.doencrypt} --openssl {params.openssl} --encrypt-pass {params.encrypt_pass} --hash {params.hash} \
-          --doarchive {params.doarchive} --archive {params.archive} --cloud {params.cloud} \
-          --output {params.output_joined} \
-          2>> {log}
+          echo "macs2 callpeak -f {params.format} -g {params.genome} -t {input.bam} --outdir peak -n {params.sample} -q {params.fdr} {params.peak_mode_str} --keep-dup all --bdg" | tee {log}
+          macs2 callpeak -f {params.format} -g {params.genome} -t {input.bam} --outdir peak -n {params.sample} -q {params.fdr} {params.peak_mode_str} --keep-dup all --bdg 2>> {log}
 
           ## export rule env details
           conda env export --no-builds > info/call_peaks.info
@@ -142,27 +110,13 @@ rule chipqc:
     params:
         sample='{sample}',
         predir=PREDIR,
-        srcdir=SOURCEDIR,
-        doencrypt=DOENCRYPT,
-        openssl=OPENSSL,
-        encrypt_pass=ENCRYPT_PASS,
-        hash=HASH,
-        doarchive=DOARCHIVE,
-        archive=ARCHIVE,
-        cloud=CLOUD
+        srcdir=SOURCEDIR
     priority: 1
     threads: 1
     shell:
         '''
           echo "Rscript --vanilla --quiet {params.srcdir}/r/init-chipqc-sample-peak-metrics.r {params.predir} {params.sample} {input.bam} {input.peak}" | tee {log}
           Rscript --vanilla --quiet {params.srcdir}/r/init-chipqc-sample-peak-metrics.r {params.predir} {params.sample} {input.bam} {input.peak} 2>> {log}
-
-          ## encrypt and archive if needed
-          python3 {params.srcdir}/python/init-encrypt-archive.py --src {params.srcdir}\
-          --doencrypt {params.doencrypt} --openssl {params.openssl} --encrypt-pass {params.encrypt_pass} --hash {params.hash} \
-          --doarchive {params.doarchive} --archive {params.archive} --cloud {params.cloud} \
-          --output {output} \
-          2>> {log}
 
           ## export rule env details
           conda env export --no-builds > info/chipqc.info
@@ -186,29 +140,14 @@ rule annot_peaks:
     params:
         sample='{sample}',
         annot_gtf=paths.annot.gtf,
-        output_joined=','.join([paths.peak.annot_stat,paths.peak.annot_tab,paths.ptw.gobp,paths.ptw.kegg]),
-        predir=PREDIR,
         srcdir=SOURCEDIR,
-        doencrypt=DOENCRYPT,
-        openssl=OPENSSL,
-        encrypt_pass=ENCRYPT_PASS,
-        hash=HASH,
-        doarchive=DOARCHIVE,
-        archive=ARCHIVE,
-        cloud=CLOUD
+        predir=PREDIR
     priority: 1
     threads: 1
     shell:
         '''
           echo "Rscript --vanilla --quiet {params.srcdir}/r/init-peak-annot-ptw-enr.r {params.predir} {params.sample} {params.annot_gtf} {input.peak}" | tee {log}
           Rscript --vanilla --quiet {params.srcdir}/r/init-peak-annot-ptw-enr.r {params.predir} {params.sample} {params.annot_gtf} {input.peak} 2>> {log}
-
-          ## encrypt and archive if needed
-          python3 {params.srcdir}/python/init-encrypt-archive.py --src {params.srcdir}\
-          --doencrypt {params.doencrypt} --openssl {params.openssl} --encrypt-pass {params.encrypt_pass} --hash {params.hash} \
-          --doarchive {params.doarchive} --archive {params.archive} --cloud {params.cloud} \
-          --output {params.output_joined} \
-          2>> {log}
 
           ## export rule env details
           conda env export --no-builds > info/annot_peaks.info

@@ -15,17 +15,7 @@ rule genome_track:
     params:
         sample='{sample}',
         track_region=TRACK_REGION,
-        annot_gtf=paths.annot.gtf,
-        output_joined=','.join([paths.track.ini, paths.track.png]),
-        predir=PREDIR,
-        srcdir=SOURCEDIR,
-        doencrypt=DOENCRYPT,
-        openssl=OPENSSL,
-        encrypt_pass=ENCRYPT_PASS,
-        hash=HASH,
-        doarchive=DOARCHIVE,
-        archive=ARCHIVE,
-        cloud=CLOUD
+        annot_gtf=paths.annot.gtf
     priority: 1
     threads: 1
     shell:
@@ -44,13 +34,6 @@ rule genome_track:
           ## create track image
           echo "pyGenomeTracks --tracks {output.ini} --region {params.track_region} -o {output.png} --dpi 300" | tee -a {log}
           pyGenomeTracks --tracks {output.ini} --region {params.track_region} -o {output.png} --dpi 300 2>> {log}
-
-          ## encrypt and archive if needed
-          python3 {params.srcdir}/python/init-encrypt-archive.py --src {params.srcdir}\
-          --doencrypt {params.doencrypt} --openssl {params.openssl} --encrypt-pass {params.encrypt_pass} --hash {params.hash} \
-          --doarchive {params.doarchive} --archive {params.archive} --cloud {params.cloud} \
-          --output {params.output_joined} \
-          2>> {log}
 
           ## export rule env details
           conda env export --no-builds > info/genome_track.info
