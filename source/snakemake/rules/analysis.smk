@@ -67,7 +67,7 @@ rule call_peaks:
 ## Convert peak bdg file to bw file
 rule bdg_to_bw:
     input:
-        genome_size=rules.genome_size.output,
+        genome_size=rules.genome_size.output.size,
         peak=rules.call_peaks.output.peak,
         extra=rules.call_peaks.output.extra,
         pileup_bdg=rules.call_peaks.output.pileup_bdg

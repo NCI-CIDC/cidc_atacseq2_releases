@@ -47,7 +47,8 @@ rule genome_size:
     input:
         rules.build_bwa_index.output
     output:
-        paths.genome.size
+        size=paths.genome.size,
+        fai=paths.genome.fai
     benchmark:
         'benchmark/genome_size.tab'
     log:
@@ -63,8 +64,8 @@ rule genome_size:
           ## get genome chrom size
           echo "samtools faidx {params.indexseq}" | tee {log}
           samtools faidx {params.indexseq} 2>> {log}
-          echo "cut -f1,2 {params.indexseq}.fai > {output}" | tee -a {log}
-          cut -f1,2 {params.indexseq}.fai > {output} 2>> {log}
+          echo "cut -f1,2 {params.indexseq}.fai > {output.size}" | tee -a {log}
+          cut -f1,2 {params.indexseq}.fai > {output.size} 2>> {log}
           
           ## export rule env details
           conda env export --no-builds > info/samtools.info
@@ -82,7 +83,7 @@ rule create_bed:
     shell:
         '''
           ## Remove the entries from chrM, chrUN, _random, chrEBV in the hg38 genome index and convert fai format to bed
-          grep -v -E 'chrUn|_random|chrEBV|chrM' {input} | awk -F'\t' '{{ print $1,\"1\",$2 }}' > {output}
+          grep -v -E 'chrUn|_random|chrEBV|chrM' {input} | awk -F'\t' '{{ print $1,\"0\",$2 }}' > {output}
         '''  
 
 ## Retrieve hg38 blacklist from https://github.com/Boyle-Lab/Blacklist
