@@ -192,7 +192,9 @@ OUTPUT = [expand(paths.rseqc.bamqc_txt, sample=SAMID),
           expand(paths.chipqc.csv, sample=SAMID),
           expand(paths.peak.annot_tab, sample=SAMID),
           expand(paths.ptw.gobp, sample=SAMID),
-          expand(paths.ptw.kegg, sample=SAMID)]
+          expand(paths.ptw.kegg, sample=SAMID),
+          expand(paths.centrifuge.report, sample=SAMID
+]
 
 if RUN_FASTQC == 1:
     OUTPUT.append(expand(paths.fastqc.targz, sample=SAMID))
@@ -265,3 +267,4 @@ include: "./rules/format_peaks.smk"
 include: "./rules/track.smk"
 include: "./rules/motif.smk"
 include: "./rules/targets.smk"
+include: "./rules/contamination.smk"

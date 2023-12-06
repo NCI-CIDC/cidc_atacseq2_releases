@@ -10,7 +10,8 @@ genome:
 annot:
     gtf: "GCA_000001405.15_GRCh38_full_analysis_set.refseq_annotation.gtf"
     bed: "GCA_000001405.15_GRCh38_full_analysis_set.refseq_annotation.bed"
-
+    centrifuge: "hg38.something"
+    
 ## INGEST
 input:
     input_fastq: "{{sample}}_{read}.fastq.gz"
@@ -35,6 +36,11 @@ bam:
     tn5_index: "{sample}_tn5_adjust.bam.bai"
     sampled_bam: "{sample}_sampled.bam"
     sampled_index: "{sample}_sampled.bam.bai"
+
+## CONTAMINATION
+contrifuge:
+    classification: "{sample}_classification.txt.gz"
+    report: "{sample}_report.txt"
 
 rseqc:
     bamqc_txt: "{sample}_bam_qc.txt"
