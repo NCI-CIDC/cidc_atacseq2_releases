@@ -31,6 +31,9 @@ bam:
     filtered_bam: "{sample}_filtered.bam"
     filtered_index: "{sample}_filtered.bam.bai"
     metrics: "{sample}_marked_duplicates_metrics.txt"
+    tn5_bam_unsort: "{sample}_tn5_adjust_unsort.bam"
+    tn5_bam: "{sample}_tn5_adjust.bam"
+    tn5_index: "{sample}_tn5_adjust.bam.bai"
     sampled_bam: "{sample}_sampled.bam"
     sampled_index: "{sample}_sampled.bam.bai"
 

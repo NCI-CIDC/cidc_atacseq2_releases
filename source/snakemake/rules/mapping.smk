@@ -23,73 +23,6 @@ rule run_bwa:
           bwa mem -t {threads} {params.indexseq} {params.in_fa_str} | samtools view -@ {threads} -Sbh | samtools sort -@ {threads} > {output} 2>> {log}
         '''
 
-## Perform post-alignment filtering on the sorted bam
-rule filter_bam:
-    input:
-        bam=rules.run_bwa.output,
-        blacklist=rules.retrieve_hg38_blacklist.output,
-        bed=rules.create_bed.output
-    output:
-        dup_bam=paths.bam.dup_bam,
-        metrics=paths.bam.metrics,
-        temp_bam=paths.bam.temp_bam,
-        filtered_bam=paths.bam.filtered_bam,
-        index=paths.bam.filtered_index
-    benchmark:
-        'benchmark/{sample}_filer_bam.tab'
-    conda:
-        SOURCEDIR+"/../envs/filter_bam.yaml"
-    shell:
-        '''
-          ## Mark duplicates and provide duplicate stats for the raw bam
-          ## NOTE: The command line for Picard is going to be updated in the future. Refer to link below.
-          ## https://github.com/broadinstitute/picard/wiki/Command-Line-Syntax-Transition-For-Users-(Pre-Transition)
-          picard MarkDuplicates I={input.bam} O={output.dup_bam} M={output.metrics}
-
-          ## Index the bam with duplicates marked
-          samtools index {output.dup_bam}
-
-          ## Remove reads that are unmapped, mate unmapped (for paired-end), not primary alignment,
-          ## fail platform/vendor quality checks, and PCR or optical duplicates. Also filters
-          ## reads aligned to chrM, chrUN, _random, chrEBV.
-          samtools view -b -F 1804 -L {input.bed} {output.dup_bam} -o {output.temp_bam}
-
-          ## Remove alignments that are located in the hg38 blacklist
-          bedtools intersect -v -abam {output.temp_bam} -b {input.blacklist} > {output.filtered_bam}
-         
-          ## Index the final filtered bam
-          samtools index {output.filtered_bam} -o {output.index}
-        '''
-
-## Downsample the filtered bam for approximately 4 million reads
-rule sample_bam:
-    input:
-        filtered_bam=rules.filter_bam.output.filtered_bam,
-    output:
-        sampled_bam=paths.bam.sampled_bam,
-        index=paths.bam.sampled_index
-    benchmark:
-        'benchmark/{sample}_index_bam.tab'
-    conda:
-        SOURCEDIR+"/../envs/samtools.yaml"
-    shell:
-        '''
-          count=$(samtools view -c {input.filtered_bam})
-          frac=$(echo "4000000/$count" | bc -l)     
-          
-          ## If the read count of the bam is less than or equal to 4 million,
-          ## all the reads will be used. Otherwise, the bam will be randomly 
-          ## sampled for ~4 million reads.
-          if [ "$count" -le 4000000 ]; then
-              cp {input.filtered_bam} {output.sampled_bam}
-          else
-              ## Seed is arbitrarily set to 27 for consistency
-              samtools view -b -s 27$frac {input.filtered_bam} > {output.sampled_bam}
-          fi
-          ## Index the sampled bam
-          samtools index {output.sampled_bam} -o {output.index}
-        '''
-
 ## Index BAM
 rule index_bam:
     input:
@@ -110,6 +43,106 @@ rule index_bam:
         '''
           echo "samtools index -@ {threads} {input.bam}" > {log}
           samtools index -@ {threads} {input.bam} 2>> {log}
+        '''
+
+## Perform post-alignment filtering on the sorted bam
+rule filter_bam:
+    input:
+        bam=rules.run_bwa.output,
+        blacklist=rules.retrieve_hg38_blacklist.output,
+        bed=rules.create_bed.output
+    output:
+        dup_bam=paths.bam.dup_bam,
+        metrics=paths.bam.metrics,
+        temp_bam=paths.bam.temp_bam,
+        filtered_bam=paths.bam.filtered_bam,
+        index=paths.bam.filtered_index
+    benchmark:
+        'benchmark/{sample}_filter_bam.tab'
+    conda:
+        SOURCEDIR+"/../envs/filter_bam.yaml"
+    priority: 5
+    threads: max(1,min(8,NCORES))
+    shell:
+        '''
+          ## Mark duplicates and provide duplicate stats for the raw bam
+          ## NOTE: The command line for Picard is going to be updated in the future. Refer to link below.
+          ## https://github.com/broadinstitute/picard/wiki/Command-Line-Syntax-Transition-For-Users-(Pre-Transition)
+          picard MarkDuplicates I={input.bam} O={output.dup_bam} M={output.metrics}
+
+          ## Index the bam with duplicates marked
+          samtools index {output.dup_bam}
+
+          ## Remove reads that are unmapped, mate unmapped (for paired-end), not primary alignment,
+          ## fail platform/vendor quality checks, and PCR or optical duplicates. Also filters
+          ## reads aligned to chrM, chrUN, _random, chrEBV.
+          samtools view -b -F 1804 -L {input.bed} {output.dup_bam} -o {output.temp_bam}
+
+          ## Remove alignments that are located in the hg38 blacklist
+          bedtools intersect -v -abam {output.temp_bam} -b {input.blacklist} > {output.filtered_bam}
+         
+          ## Index the final filtered bam
+          samtools index -@ {threads} {output.filtered_bam} -o {output.index}
+        '''
+
+## Perform tn5 adjustment
+## Shift read lengths to account for the 9-bp cutting interval between the two cut sites of the Tn5 enzyme using deeptools
+rule tn5_adjust_bam:
+    input:
+        filtered_bam=rules.filter_bam.output.filtered_bam
+    output:
+        adj_bam_unsort=paths.bam.tn5_bam_unsort,
+        adj_bam=paths.bam.tn5_bam,
+        index=paths.bam.tn5_index
+    benchmark:
+        'benchmark/{sample}_tn5_adjust_bam.tab'
+    log:
+        'log/{sample}_tn5_adjust_bam.log'
+    conda:
+        SOURCEDIR+"/../envs/filter_bam.yaml"
+    params:
+        sample='{sample}'
+    priority: 5
+    threads: max(1,min(8,NCORES))
+    shell:
+        '''
+          echo "alignmentSieve -p {threads} -b {input.filtered_bam} --ATACshift -o {output.adj_bam_unsort}" | tee {log}
+          alignmentSieve -p {threads} -b {input.filtered_bam} --ATACshift -o {output.adj_bam_unsort} 2>> {log} 
+          samtools sort -@ {threads} {output.adj_bam_unsort} > {output.adj_bam}
+          
+          ## Index the tn5 adj bam
+          samtools index -@ {threads} {output.adj_bam} -o {output.index} 2>> {log}
+        '''
+
+## Downsample the filtered bam for approximately 4 million reads
+rule sample_bam:
+    input:
+        adj_bam=rules.tn5_adjust_bam.output.adj_bam,
+    output:
+        sampled_bam=paths.bam.sampled_bam,
+        index=paths.bam.sampled_index
+    benchmark:
+        'benchmark/{sample}_sample_bam.tab'
+    conda:
+        SOURCEDIR+"/../envs/samtools.yaml"
+    threads: max(1,min(8,NCORES))
+    priority: 5
+    shell:
+        '''
+          count=$(samtools view -c {input.adj_bam})
+          frac=$(echo "4000000/$count" | bc -l)     
+          
+          ## If the read count of the bam is less than or equal to 4 million,
+          ## all the reads will be used. Otherwise, the bam will be randomly 
+          ## sampled for ~4 million reads.
+          if [ "$count" -le 4000000 ]; then
+              cp {input.adj_bam} {output.sampled_bam}
+          else
+              ## Seed is arbitrarily set to 27 for consistency
+              samtools view -b -s 27$frac {input.adj_bam} > {output.sampled_bam}
+          fi
+          ## Index the sampled bam
+          samtools index -@ {threads} {output.sampled_bam} -o {output.index}
         '''
 
 ## Run FASTQC
