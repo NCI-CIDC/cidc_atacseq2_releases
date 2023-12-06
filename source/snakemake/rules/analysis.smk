@@ -1,7 +1,7 @@
 ## Run CNV analysis with QDNAseq
 rule cnv_analysis:
    input:
-       bam=rules.filter_bam.output.filtered_bam,
+       bam=rules.tn5_adjust_bam.output.adj_bam,
        idx=rules.filter_bam.output.index
    output:
        bed=paths.cnv.bed,
@@ -32,7 +32,7 @@ rule cnv_analysis:
 ## Run peak calling with MACS
 rule call_peaks:
     input:
-        bam=rules.filter_bam.output.filtered_bam,
+        bam=rules.tn5_adjust_bam.output.adj_bam,
         idx=rules.filter_bam.output.index
     output:
         xls=paths.peak.xls,
