@@ -96,3 +96,14 @@ rule retrieve_hg38_blacklist:
     shell:
         'wget -qO - https://github.com/Boyle-Lab/Blacklist/raw/master/lists/hg38-blacklist.v2.bed.gz | gunzip > {output}'
 
+## Retrieve DHS regions list from dev GCP bucket. This might not be final location of the file.
+## If file location changes, the shell directive needs to be updated.
+rule retrieve_hg38_dhs:
+    output:
+        paths.genome.dhs
+    benchmark:
+        'benchmark/retrieve_hg38_dhs.tab'
+    threads: 1
+    shell:
+        "gsutil cp gs://chips2-test-data/DHS_hg38.bed {output}" 
+
