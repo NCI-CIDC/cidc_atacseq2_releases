@@ -69,6 +69,10 @@ peak:
     filtered_sorted_narrowPeak: "{sample}_5k_sorted_peaks.narrowPeak"
     broadPeak: "{sample}_sorted_peaks.broadPeak"
     filtered_sorted_broadPeak: "{sample}_5k_sorted_peaks.broadPeak"
+    dhs_narrowPeak: "{sample}_dhs_peaks.narrowPeak"
+    dhs_broadPeak: "{sample}_dhs_peaks.broadPeak"
+    csv_narrowPeak: "{sample}_dhs_stats_narrowPeak.csv"
+    csv_broadPeak: "{sample}_dhs_stats_broadPeak.csv"
 
 chipqc:
     csv: "{sample}_chipqc.csv"

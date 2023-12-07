@@ -152,3 +152,32 @@ rule annot_peaks:
           ## export rule env details
           conda env export --no-builds > info/annot_peaks.info
         '''
+
+## Intersect top 5k peaks with DHS regions and outputs
+rule dhs_intersect:
+    input:
+        peak=paths.peak.filtered_sorted_narrowPeak if PEAK_MODE=='narrow' else paths.peak.filtered_sorted_broadPeak,
+        dhs_bed=rules.retrieve_hg38_dhs.output
+    output:
+        dhs=paths.peak.dhs_narrowPeak if PEAK_MODE=='narrow' else paths.peak.dhs_broadPeak,
+        stats=paths.peak.csv_narrowPeak if PEAK_MODE=='narrow' else paths.peak.csv_broadPeak
+    benchmark:
+        'benchmark/{sample}_dhs_intersect.tab'
+    conda:
+        SOURCEDIR+"/../envs/filter_bam.yaml"
+    shell:
+        '''
+          ## Write original A entry once if any overlaps found in B. In other words, 
+          ## just report the fact at least one overlap was found in B.
+          intersectBed -wa -u -a {input.peak} -b {input.dhs_bed} > {output.dhs} 
+          
+          ## Count number of peaks in the original file and dhs file
+          original=$(wc -l < {input.peak})
+          dhs=$(wc -l < {output.dhs})
+          total=$(($original+$dhs))
+          echo "original,dhs,total" > {output.stats}
+          echo "$original,$dhs,$total" >> {output.stats}
+           
+          ## export rule env details
+          conda env export --no-builds > info/dhs_intersect.info
+        '''
