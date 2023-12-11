@@ -37,19 +37,21 @@ wildcard_constraints:
 ##############################
 #       CONFIGURATION        #
 ##############################
-## Specify YAML config file location
-configfile: "preprocess_config.yaml"
+# Specify YAML config file location
+configfile: "config/config.yaml"
+# Set workflow working (output) dir
+workdir: config['predir']
 
-## Directories
-## source dir
-SOURCEDIR     = config["srcdir"]
-## pre-processing dir
+# Directories
+# source dir
+SOURCEDIR  = config["srcdir"]
+# working output dir
 PREDIR     = config["predir"]
-## analysis data results dir
-DATADIR       = config["datadir"]
+# analysis data results and reporting within working dir
+DATADIR    = config["datadir"]
+REPDIR     = config["repdir"]
 
 
-#include: "./rules/common.smk"
 def create_path_accessor(prefix: Path = Path(PREDIR)) -> Box:
     """Create a Box to provide '.' access to hierarchy of paths"""
     data = yaml.load(Path(config["file_layout"]).open(), Loader=yaml.SafeLoader)
@@ -65,23 +67,6 @@ def create_path_accessor(prefix: Path = Path(PREDIR)) -> Box:
 paths = create_path_accessor()
 
 
-## Program names/locations
-CLOUD        = config["cloud_prog"]
-OPENSSL      = config["openssl_prog"]
-CUTADAPT     = config["cutadapt_prog"]
-TRIMMOMATIC  = config["trimmomatic_prog"]
-FASTQC       = config["fastqc_prog"]
-HISAT2        = config["hisat_prog"]
-BWA        = config["bwa_prog"]
-HISAT2BUILD   = HISAT2 + '-build'
-HISAT2SPLICE  = HISAT2 + '_extract_splice_sites.py'
-SAMTOOLS      = config["samtools_prog"]
-FASTQDUMP    = config["fastqdump_prog"]
-RSEQC         = config["rseqc_dir"]
-MACS         = config["macs_prog"]
-
-
-
 ## Use the source dir to import helper modules
 sys.path.append(SOURCEDIR+'/python')
 import trimadapters
@@ -90,91 +75,90 @@ import putfile
 import utils 
 import time
 
-## Logging config
-LOG_LEVEL = config["log_level"]
-LOG_FILE  = config["log_file"]
-
 
 
 ##############################
 #       SET GLOBAL VARS      #
 ##############################
+# Workflow info
 ## number of cores dedicated to run
 NCORES  = int(config["ncores"])
-
-## output sub folders
+## Logging config
+LOG_FILE  = config["log_file"]
+## init sub folders
 SUBDIRS  = config["subdirs"]
 
-## Run fastqc?
-RUN_FASTQC = int(config["run_fastqc"])
 
-## Run genome tracks?
-RUN_GENOME_TRACK = int(config["run_genome_track"])
-TRACK_REGION = str(config["track_region"])
+# Reference genome ftp
+GENOME_FA_FTP = config["genome_fa_ftp"]
+GENOME_GTF_FTP = config["genome_gtf_ftp"]
+GENOME_BWA_FTP = config["genome_gtf_ftp"]
+GENOME_BLACKLIST_URL = config["genome_blacklist_url"]
+GENOME_DHS_GC = config["genome_dhs_gc"]
 
-## Save intermediate files?
-REMOVEINTFILES = not config["saveintlocalfiles"]
 
+# Sample info
 ## List of samples to process
-SAMID        = utils.toList(config["samid"]) 
-
+SAMID        = utils.toList(config["samid"])
 ## List of input files
 FASTQ_1      = utils.toList(config["fastq1"])
 FASTQ_2      = utils.toList(config["fastq2"])
-
 ## Adapter sequences
 FP_ADAPTERS   = [x.strip() for x in utils.toList(config["fp_adapter_seq"])]
 TP_ADAPTERS   = [x.strip() for x in utils.toList(config["tp_adapter_seq"])]
-
 ## Set single or paired end
 if (FASTQ_2 != ['']):
     ENDS  = ['1','2']
 else:
     ENDS  = ['1']
-
-## Strandedness of experiment
-STRANDED = int(config["stranded"])
-
 ## Determine whether adapters should be trimmed or not
 TRIM_FP = sum([x == 'NA'  for x in FP_ADAPTERS]) == 0
 TRIM_TP = sum([x == 'NA'  for x in TP_ADAPTERS]) == 0
 TRIM_ADAPTERS_OUTPUT = '.fastq.gz' if (TRIM_FP or TRIM_TP) else '.skipped'
 
+
+# Preprocessing options
+## Configure quality trimming level
+QUAL_CUTOFF = config["quality_trim"]
+
+
+# Peak calling options
 ## Macs peak caller mode
 PEAK_MODE = str(config["peak_mode"])
-
 ## Macs peak caller ext size for broad calls
 EXTSIZE = str(config["ext_size"])
-
 ## Macs peak caller arbitrary shift in bp here
 SHIFT = str(config["shift"])
-
 ## Macs min qvalue for sig peak
 PEAK_FDR = str(config["peak_fdr"])
-
 ## Create peak mode str for macs
 if PEAK_MODE == 'broad':
     PEAK_MODE_STR = '--broad --broad-cutoff %s --nomodel --shift %s --extsize %s' % (PEAK_FDR, SHIFT, EXTSIZE)
 else:
     PEAK_MODE_STR = '--nomodel --shift %s --extsize %s' % (SHIFT, EXTSIZE)
 
-## Configure uploading 
+
+# Genome track options
+TRACK_REGION = str(config["track_region"])
+
+
+# Download input / upload output info
+DECRYPT_PASS = config["decrypt_pass"]
 ARCHIVE = config["archive_bucket"]
 DOARCHIVE = len(ARCHIVE) != 0
-
-## Configure encryption
-DOENCRYPT    = int(config["encrypt_local"]) == 1
-DECRYPT_PASS = config["decrypt_pass"]
-ENCRYPT_PASS = config["encrypt_pass"]
-
-## Configure quality trimming level
-QUAL_CUTOFF = config["quality_trim"]
-
-## hash for encryption/decryption & Checksums
 HASH = config["hash"]
 
+
+## Program names/locations referenced in some python scripts
+CLOUD        = config["cloud_prog"]
+OPENSSL      = config["openssl_prog"]
+FASTQDUMP    = config["fastqdump_prog"]
+CUTADAPT     = config["cutadapt_prog"]
+TRIMMOMATIC  = config["trimmomatic_prog"]
+
+
 ## Set up logging to log file
-_logging.basicConfig(level=LOG_LEVEL,
+_logging.basicConfig(level=_logging.INFO,
                     format='[cidc-atac] %(asctime)s - %(levelname)s - %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p',
                     handlers=[_logging.FileHandler(LOG_FILE)])
@@ -184,21 +168,16 @@ _logging.basicConfig(level=LOG_LEVEL,
 ################################
 #     DEFINE TARGET OUTPUT     #
 ################################
-
 OUTPUT = [expand(paths.rseqc.bamqc_txt, sample=SAMID),
           expand(paths.rseqc.bamgc_txt, sample=SAMID),
+          expand(paths.fastqc.targz, sample=SAMID),
           expand(paths.cnv.csv, sample=SAMID),
           expand(paths.peak.bw, sample=SAMID),
           expand(paths.chipqc.csv, sample=SAMID),
           expand(paths.peak.annot_tab, sample=SAMID),
           expand(paths.ptw.gobp, sample=SAMID),
-          expand(paths.ptw.kegg, sample=SAMID)]
-
-if RUN_FASTQC == 1:
-    OUTPUT.append(expand(paths.fastqc.targz, sample=SAMID))
-
-if RUN_GENOME_TRACK == 1:
-    OUTPUT.append(expand(paths.track.png, sample=SAMID))
+          expand(paths.ptw.kegg, sample=SAMID),
+          expand(paths.track.png, sample=SAMID)]
 
 if PEAK_MODE == "narrow":
     OUTPUT.append(expand(paths.motif.narrow_peak, sample=SAMID))
@@ -215,6 +194,8 @@ else:
     OUTPUT.append(expand(paths.targets.broadPeak_100k, sample=SAMID))
     OUTPUT.append(expand(paths.peak.dhs_broadPeak, sample=SAMID))
     OUTPUT.append(expand(paths.peak.csv_broadPeak, sample=SAMID))
+
+
 
 #########################################
 #    Define any onstart or onsuccess    #
@@ -237,12 +218,9 @@ onsuccess:
     shell('Rscript --vanilla '+SOURCEDIR+'/r/run-report.r '+SOURCEDIR+'/r/cidc_atac-report-slidy.Rmd '+PREDIR+' '+DATADIR+'/../report')
     merged_results.append('analysis/report/cidc_atac-report-slidy.html')
 
-    ## Encrypt and/or upload main results if needed
-    if DOENCRYPT:
-        utils.encryptFile(file=merged_results, openssl=OPENSSL, password=ENCRYPT_PASS, hash=HASH)
-        merged_results = [f+'.enc' for f in merged_results]
+    ## Upload main results if needed
     if DOARCHIVE:
-        [putfile.upload(file=x, destination=ARCHIVE, prog=CLOUD, doencrypt=DOENCRYPT) for x in merged_results]
+        [putfile.upload(file=x, destination=ARCHIVE, prog=CLOUD) for x in merged_results]
 
     shell("echo 'Pipeline complete!'")
 
