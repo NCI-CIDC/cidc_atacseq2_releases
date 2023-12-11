@@ -165,6 +165,8 @@ rule dhs_intersect:
         'benchmark/{sample}_dhs_intersect.tab'
     conda:
         SOURCEDIR+"/../envs/filter_bam.yaml"
+    priority: 1
+    threads: 1
     shell:
         '''
           ## Write original A entry once if any overlaps found in B. In other words, 

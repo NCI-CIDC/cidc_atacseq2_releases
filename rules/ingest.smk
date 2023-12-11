@@ -1,10 +1,9 @@
 ## Get input
 rule getfile:
     input:
-        rules.directory_setup.output,
-        rules.build_bwa_index.output
+        rules.directory_setup.output
     output:
-        temp(expand(paths.input.input_fastq, read=ENDS))
+        expand(paths.input.input_fastq, read=ENDS)
     benchmark:
         'benchmark/{sample}_getfile.tab'
     log:
@@ -49,7 +48,7 @@ rule trimadapters:
     input:
         fa=rules.getfile.output
     output:
-        temp([x + TRIM_ADAPTERS_OUTPUT for x in expand(paths.cutadapt.cutadapt_fastq, read=ENDS)])
+        [x + TRIM_ADAPTERS_OUTPUT for x in expand(paths.cutadapt.cutadapt_fastq, read=ENDS)]
     benchmark:
         'benchmark/{sample}_trimadapters.tab'
     log:
@@ -91,7 +90,7 @@ rule qualityfilter:
     input:
         rules.trimadapters.output if TRIM_FP or TRIM_TP else rules.getfile.output
     output:
-        temp(expand(paths.rqual_filter.qfilter_fastq_paired, read=ENDS, paired=['P','U'])) if len(ENDS)==2 else temp(expand(paths.rqual_filter.qfilter_fastq_single, read=ENDS))
+        expand(paths.rqual_filter.qfilter_fastq_paired, read=ENDS, paired=['P','U']) if len(ENDS)==2 else expand(paths.rqual_filter.qfilter_fastq_single, read=ENDS)
     benchmark:
         'benchmark/{sample}_qualityfilter.tab'
     log:
