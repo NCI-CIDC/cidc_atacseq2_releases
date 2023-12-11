@@ -148,7 +148,7 @@ rule sample_bam:
 ## Run FASTQC
 rule fastqc:
     input:
-        rules.run_bwa.output
+        rules.tn5_adjust_bam.output.adj_bam
     output:
         paths.fastqc.targz
     benchmark:
@@ -179,8 +179,8 @@ rule fastqc:
 ## Run RSEQC bam_stat.py
 rule bam_qc:
     input:
-        bam=rules.run_bwa.output,
-        idx=rules.index_bam.output
+        bam=rules.tn5_adjust_bam.output.adj_bam,
+        idx=rules.tn5_adjust_bam.output.index
     output:
         paths.rseqc.bamqc_txt
     benchmark:
@@ -203,8 +203,8 @@ rule bam_qc:
 ## Run RSEQC read_gc.py
 rule bam_gc:
     input:
-        bam=rules.run_bwa.output,
-        idx=rules.index_bam.output
+        bam=rules.tn5_adjust_bam.output.adj_bam,
+        idx=rules.tn5_adjust_bam.output.index
     output:
         r=paths.rseqc.bamgc_r,
         txt=paths.rseqc.bamgc_txt
