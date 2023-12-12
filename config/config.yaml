@@ -1,23 +1,24 @@
-## workflow info
-srcdir: '/media/scratch/cherikhsr/cidc_atac/source'
+## workflow set up
+# working output dir
 predir: '/media/scratch/cherikhsr/atac_test_output'
-datadir: '/media/scratch/cherikhsr/atac_test_output/analysis/data'
-repdir: '/media/scratch/cherikhsr/atac_test_output/analysis/report'
-log_file: '/media/scratch/cherikhsr/atac_test_output/preprocess.log'
+# source dir for supporting scripts
+srcdir: '/media/scratch/cherikhsr/cidc_atac/source'
+# file to write running log
+log_file: '/media/scratch/cherikhsr/atac_test_output/pipeline.log'
+# number of CPU cores dedicated to entire workflow
 ncores: 16
-subdirs: benchmark log info progress genome annot input
 
 
 ## output file paths layout file
-file_layout: '/media/scratch/cherikhsr/cidc_atac/config/file_layout.yaml'
+file_layout: 'config/file_layout.yaml'
 
 
 ## reference genome download locations file
-reference: '/media/scratch/cherikhsr/cidc_atac/config/reference.csv'
+reference: 'config/reference.csv'
 
 
 ## sample metadata file
-sample_metadata: '/media/scratch/cherikhsr/cidc_atac/config/sample_metadata.csv'
+sample_metadata: 'config/sample_metadata.csv'
 
 
 ## preprocess options
@@ -36,5 +37,5 @@ track_region: 'chr1:750000-1050000'
 
 
 ## cloud program [gsutil, aws] and bucket location
-cloud_prog: gsutil
+cloud_prog: 'gsutil'
 archive_bucket: ''

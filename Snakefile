@@ -40,17 +40,24 @@ wildcard_constraints:
 ##############################
 # Specify YAML config file location
 configfile: "config/config.yaml"
-# Set workflow working (output) dir
-workdir: config['predir']
 
 # Directories
-# source dir
-SOURCEDIR  = config["srcdir"]
 # working output dir
 PREDIR     = config["predir"]
+# source dir for supporting scripts
+SOURCEDIR  = config["srcdir"]
 # analysis data results and reporting within working dir
-DATADIR    = config["datadir"]
-REPDIR     = config["repdir"]
+DATADIR    = PREDIR+'/analysis/data'
+REPDIR     = PREDIR+'/analysis/report'
+
+
+# Use the source dir to import helper modules
+sys.path.append(SOURCEDIR+'/python')
+import trimadapters
+import getfile
+import putfile
+import utils
+import time
 
 
 # Read in other supporting config files
@@ -74,29 +81,6 @@ reference_df = pd.read_table(config["reference"], sep=",")
 sample_metadata_df = pd.read_table(config["sample_metadata"], sep=",", keep_default_na=False)
 
 
-
-# Use the source dir to import helper modules
-sys.path.append(SOURCEDIR+'/python')
-import trimadapters
-import getfile  
-import putfile  
-import utils 
-import time
-
-
-
-##############################
-#       SET GLOBAL VARS      #
-##############################
-# Workflow info
-## number of cores dedicated to run
-NCORES  = int(config["ncores"])
-## Logging config
-LOG_FILE  = config["log_file"]
-## init sub folders
-SUBDIRS  = config["subdirs"]
-
-
 # Reference genome gcloud URI locations
 GENOME_FA_URI = reference_df.loc[reference_df["ref_file_name"]=="genome_fa", "google_bucket_URI"].item()
 GENOME_GTF_URI = reference_df.loc[reference_df["ref_file_name"]=="genome_gtf", "google_bucket_URI"].item()
@@ -114,6 +98,23 @@ FASTQ_2 = utils.toList(sample_metadata_df['fastq_file_2'])
 ## Adapter sequences
 FP_ADAPTERS   = [x.strip() for x in utils.toList(sample_metadata_df['fivep_adapter_seq'])]
 TP_ADAPTERS   = [x.strip() for x in utils.toList(sample_metadata_df['threep_adapter_seq'])]
+
+
+# Set workflow working (output) dir
+workdir: PREDIR
+
+
+
+##############################
+#       SET GLOBAL VARS      #
+##############################
+# Workflow info
+## number of cores dedicated to run
+NCORES  = int(config["ncores"])
+## initial sub folders
+SUBDIRS  = 'benchmark log info progress genome annot input'
+
+
 ## Set single or paired end
 if (FASTQ_2 != ['']):
     ENDS  = ['1','2']
@@ -150,13 +151,15 @@ else:
 TRACK_REGION = str(config["track_region"])
 
 
-# Options for cloud program and result archive location
+# Cloud options retrieving files and archiving results
 CLOUD  = config["cloud_prog"]
 ARCHIVE = config["archive_bucket"]
 DOARCHIVE = len(ARCHIVE) != 0
 
 
+
 # Set up logging to log file
+LOG_FILE  = config["log_file"]
 _logging.basicConfig(level=_logging.INFO,
                     format='[cidc-atac] %(asctime)s - %(levelname)s - %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p',
