@@ -24,21 +24,17 @@ rule retrieve_reference_genome:
     log:
         'log/retrieve_reference_genome.log'
     params:
-        fa_ftp=GENOME_FA_FTP,
-        gtf_ftp=GENOME_GTF_FTP
+        fa_uri=GENOME_FA_URI,
+        gtf_uri=GENOME_GTF_URI
     priority: 1000
     threads: 1
     shell:
         '''
           echo "downloading Genome to map reads to GRCh38 or hg38..." | tee {log}
-          echo "wget -nv {params.fa_ftp} -O {output.fa}.gz" | tee -a {log}
-          wget -nv {params.fa_ftp} -O {output.fa}.gz 2>> {log}
-          gunzip -f {output.fa}.gz
+          gsutil cp {params.fa_uri} {output.fa}
           
           echo "downloading supporting GTF annotations..." | tee -a {log}
-          echo "wget -nv {params.gtf_ftp} -O {output.gtf}.gz" | tee -a {log}
-          wget -nv {params.gtf_ftp} -O {output.gtf}.gz 2>> {log}
-          gunzip -f {output.gtf}.gz
+          gsutil cp {params.gtf_uri} {output.gtf}
         '''
 
 ## Download built bwa_index files for the specified genome
@@ -56,17 +52,14 @@ rule build_bwa_index:
     conda:
         SOURCEDIR+"/../envs/bwa.yaml"
     params:
-        bwa_ftp=GENOME_BWA_FTP
+        bwa_uri=GENOME_BWA_URI
     priority: 1000
     threads: 1
     shell:
         '''
           echo "Downloading bwa_index files from ncbi ftp associated with genome for mapping reads to GRCh38 or hg38..." | tee {log}
-          echo "wget -nv {params.bwa_ftp}" | tee -a {log}
-          wget -nv {params.bwa_ftp} 2>> {log}
-          tar -xzf GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.bwa_index.tar.gz -C genome
-          rm GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.bwa_index.tar.gz
-          touch {output}
+          gsutil cp {params.bwa_uri}/* genome
+          touch {output} 
           
           ## export rule env details
           conda env export --no-builds > info/bwa.info
@@ -120,10 +113,13 @@ rule retrieve_hg38_blacklist:
     benchmark:
         'benchmark/retrieve_hg38_blacklist.tab'
     params:
-        blacklist_url=GENOME_BLACKLIST_URL
+        blacklist_uri=GENOME_BLACKLIST_URI
     threads: 1
     shell:
-        'wget -qO - {params.blacklist_url} | gunzip > {output}'
+        '''
+          gsutil cp {params.blacklist_uri} {output}.gz
+          gunzip {output}.gz
+        '''
 
 ## Retrieve DHS regions list from dev GCP bucket. This might not be final location of the file.
 ## If file location changes, the shell directive needs to be updated.
@@ -133,8 +129,8 @@ rule retrieve_hg38_dhs:
     benchmark:
         'benchmark/retrieve_hg38_dhs.tab'
     params:
-        dhs_gc=GENOME_DHS_GC
+        dhs_uri=GENOME_DHS_URI
     threads: 1
     shell:
-        "gsutil cp {params.dhs_gc} {output}"
+        "gsutil cp {params.dhs_uri} {output}"
 
