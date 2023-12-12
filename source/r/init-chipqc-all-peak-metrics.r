@@ -21,7 +21,6 @@
 #############################################################################################################
 
 libs = c('ChIPQC', 'TxDb.Hsapiens.UCSC.hg38.knownGene','data.table');
-#libs = c('ChIPQC', 'data.table');
 invisible(suppressPackageStartupMessages(lapply(libs, require, character.only=T)))
 
 
@@ -34,15 +33,12 @@ if(length(args)>0) {
 	predir = args[1]
 	dtadir = args[2]
 	mta.file = args[3]
-	make.report = args[4]
+    peak.mode = args[4]
+	make.report = args[5]
 }else{
-    #stop("ERROR: No predir and/or sample metadata file supplied.")
-    stop("ERROR: No predir and path to valid sample meta data file supplied.")
+    stop("ERROR: No dirs, path to valid sample meta data file, and/or peak mode supplied.")
 }
-#predir = '~/atac_test_output'
-#dtadir = paste0(predir,'/analysis/data')
-#mta.file = paste0(predir,'/sample_metadata.csv')
-#make.report = 'make-report'
+
 
 ## read in sample metadata
 mta = read.csv(mta.file, h=T, stringsAsFactors=F)
@@ -50,29 +46,12 @@ mta = read.csv(mta.file, h=T, stringsAsFactors=F)
 mta.chipqc = mta[,c('samid', 'spct', 'factor', 'replicate','trt')]
 colnames(mta.chipqc) = c('SampleID', 'Tissue', 'Factor', 'Replicate','Condition')
 
-mta.chipqc$bamReads=NA
-mta.chipqc$Peaks=NA
-## get bam and peak file locations for samples
-for(s in 1:length(mta.chipqc$SampleID)){
-    samid = mta.chipqc$SampleID[s]
+## add bam and peak files to mta
+mta.chipqc$bamReads = paste0(predir,'/bam/',mta.chipqc$SampleID,'_sampled.bam')
+mta.chipqc$Peaks = paste0(predir,'/peak/',mta.chipqc$SampleID,'_peaks.',peak.mode,'Peak')
 
-    ## get bam file
-    bams = list.files(paste0(predir,'/bam'))
-    bam = bams[bams == paste0(samid,'.bam')]
 
-    ## get peak file
-    peaks = list.files(paste0(predir,'/peak'))
-    peak = peaks[peaks %like% paste0(samid,'_peaks\\..+r+.+Peak$')]
-
-    ## add to mta
-    mta.chipqc[mta.chipqc$SampleID==samid, 'bamReads'] = paste0(predir,'/bam/',bam)
-    mta.chipqc[mta.chipqc$SampleID==samid, 'Peaks'] = paste0(predir,'/peak/',peak)
-
-}
-
-## quantify for each sample listed in metadata ## TODO error maybe due being able to test with only one sample currently
-#data(blacklist_hg19)
-#chipqc.obj = ChIPQC(mta.chipqc, annotation="hg19", blacklist = blacklist.hg19)
+## quantify for each sample listed in metadata
 chipqc.obj = ChIPQC(mta.chipqc, annotation="hg38", chromosomes=NULL)
 
 ## if report
@@ -81,15 +60,11 @@ if(make.report=='make-report'){
 
     png(paste0(predir,'/analysis/report/Regi.png'))
     plotRegi(chipqc.obj, facetBy=c("Condition"))
-    dev.off()
+    garb=dev.off()
 }
 
 ## convert sample QC metrics to data frame
 res.all = as.data.frame(QCmetrics(chipqc.obj))
-#colnames(res.all) = names(QCmetrics(chipqc.obj))
-#res.sample$SampleID = sample
-#res.sample = res.sample[,c(ncol(res.sample),1:(ncol(res.sample)-1))]
 
 ## write out sample results
 write.table(res.all, paste0(dtadir,'/all_chipqc.csv'), sep=',', quote=F, row.names=T, col.names=T)
-system(paste0('gzip -f ',dtadir,'/all_chipqc.csv'))
