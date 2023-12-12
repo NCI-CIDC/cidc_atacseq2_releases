@@ -29,6 +29,7 @@ import os
 from pathlib import Path
 from box import Box
 import yaml
+import pandas as pd
 
 wildcard_constraints:
     sample="[^_]+"
@@ -52,6 +53,7 @@ DATADIR    = config["datadir"]
 REPDIR     = config["repdir"]
 
 
+# Read in other supporting config files
 def create_path_accessor(prefix: Path = Path(PREDIR)) -> Box:
     """Create a Box to provide '.' access to hierarchy of paths"""
     data = yaml.load(Path(config["file_layout"]).open(), Loader=yaml.SafeLoader)
@@ -66,8 +68,14 @@ def create_path_accessor(prefix: Path = Path(PREDIR)) -> Box:
 ## create file accessor
 paths = create_path_accessor()
 
+## read in reference genome locations file
+reference_df = pd.read_table(config["reference"], sep=",")
+## read in sample metadata file
+sample_metadata_df = pd.read_table(config["sample_metadata"], sep=",", keep_default_na=False)
 
-## Use the source dir to import helper modules
+
+
+# Use the source dir to import helper modules
 sys.path.append(SOURCEDIR+'/python')
 import trimadapters
 import getfile  
@@ -89,36 +97,36 @@ LOG_FILE  = config["log_file"]
 SUBDIRS  = config["subdirs"]
 
 
-# Reference genome ftp
-GENOME_FA_FTP = config["genome_fa_ftp"]
-GENOME_GTF_FTP = config["genome_gtf_ftp"]
-GENOME_BWA_FTP = config["genome_gtf_ftp"]
-GENOME_BLACKLIST_URL = config["genome_blacklist_url"]
-GENOME_DHS_GC = config["genome_dhs_gc"]
+# Reference genome gcloud URI locations
+GENOME_FA_URI = reference_df.loc[reference_df["ref_file_name"]=="genome_fa", "google_bucket_URI"].item()
+GENOME_GTF_URI = reference_df.loc[reference_df["ref_file_name"]=="genome_gtf", "google_bucket_URI"].item()
+GENOME_BWA_URI = reference_df.loc[reference_df["ref_file_name"]=="genome_bwa_index", "google_bucket_URI"].item()
+GENOME_BLACKLIST_URI = reference_df.loc[reference_df["ref_file_name"]=="genome_blacklist", "google_bucket_URI"].item()
+GENOME_DHS_URI = reference_df.loc[reference_df["ref_file_name"]=="genome_dhs", "google_bucket_URI"].item()
 
 
 # Sample info
 ## List of samples to process
-SAMID        = utils.toList(config["samid"])
+SAMID = utils.toList(sample_metadata_df['samid'])
 ## List of input files
-FASTQ_1      = utils.toList(config["fastq1"])
-FASTQ_2      = utils.toList(config["fastq2"])
+FASTQ_1 = utils.toList(sample_metadata_df['fastq_file_1'])
+FASTQ_2 = utils.toList(sample_metadata_df['fastq_file_2'])
 ## Adapter sequences
-FP_ADAPTERS   = [x.strip() for x in utils.toList(config["fp_adapter_seq"])]
-TP_ADAPTERS   = [x.strip() for x in utils.toList(config["tp_adapter_seq"])]
+FP_ADAPTERS   = [x.strip() for x in utils.toList(sample_metadata_df['fivep_adapter_seq'])]
+TP_ADAPTERS   = [x.strip() for x in utils.toList(sample_metadata_df['threep_adapter_seq'])]
 ## Set single or paired end
 if (FASTQ_2 != ['']):
     ENDS  = ['1','2']
 else:
     ENDS  = ['1']
 ## Determine whether adapters should be trimmed or not
-TRIM_FP = sum([x == 'NA'  for x in FP_ADAPTERS]) == 0
-TRIM_TP = sum([x == 'NA'  for x in TP_ADAPTERS]) == 0
+TRIM_FP = sum([x == ''  for x in FP_ADAPTERS]) == 0
+TRIM_TP = sum([x == ''  for x in TP_ADAPTERS]) == 0
 TRIM_ADAPTERS_OUTPUT = '.fastq.gz' if (TRIM_FP or TRIM_TP) else '.skipped'
 
 
 # Preprocessing options
-## Configure quality trimming level
+## Quality trimming option
 QUAL_CUTOFF = config["quality_trim"]
 
 
@@ -142,22 +150,13 @@ else:
 TRACK_REGION = str(config["track_region"])
 
 
-# Download input / upload output info
-DECRYPT_PASS = config["decrypt_pass"]
+# Options for cloud program and result archive location
+CLOUD  = config["cloud_prog"]
 ARCHIVE = config["archive_bucket"]
 DOARCHIVE = len(ARCHIVE) != 0
-HASH = config["hash"]
 
 
-## Program names/locations referenced in some python scripts
-CLOUD        = config["cloud_prog"]
-OPENSSL      = config["openssl_prog"]
-FASTQDUMP    = config["fastqdump_prog"]
-CUTADAPT     = config["cutadapt_prog"]
-TRIMMOMATIC  = config["trimmomatic_prog"]
-
-
-## Set up logging to log file
+# Set up logging to log file
 _logging.basicConfig(level=_logging.INFO,
                     format='[cidc-atac] %(asctime)s - %(levelname)s - %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p',
@@ -208,7 +207,7 @@ onsuccess:
     [shutil.copy2(x, DATADIR) for x in merged_results]
 
     ## call ChIPQC on samples in mta and output results to analysis data dir - set last arg to one of the options [make-report, no-report]
-    shell('Rscript --vanilla '+SOURCEDIR+'/r/init-chipqc-all-peak-metrics.r '+PREDIR+' '+DATADIR+' sample_metadata.csv make-report')
+    shell('Rscript --vanilla '+SOURCEDIR+'/r/init-chipqc-all-peak-metrics.r '+PREDIR+' '+DATADIR+' sample_metadata.csv '+PEAK_MODE+' make-report')
 
     ## add chipqc output to results to enc and archive if needed
     merged_results.append(['analysis/report/'+f for f in os.listdir('analysis/report')])
