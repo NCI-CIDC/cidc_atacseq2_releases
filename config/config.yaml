@@ -4,17 +4,20 @@ predir: '/media/scratch/cherikhsr/atac_test_output'
 datadir: '/media/scratch/cherikhsr/atac_test_output/analysis/data'
 repdir: '/media/scratch/cherikhsr/atac_test_output/analysis/report'
 log_file: '/media/scratch/cherikhsr/atac_test_output/preprocess.log'
-file_layout: '/media/scratch/cherikhsr/cidc_atac/config/file_layout.yaml'
 ncores: 16
 subdirs: benchmark log info progress genome annot input
 
 
-## reference genome ftp info
-genome_fa_ftp: 'ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz'
-genome_gtf_ftp: 'ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_full_analysis_set.refseq_annotation.gtf.gz'
-genome_bwa_ftp: 'ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.bwa_index.tar.gz'
-genome_blacklist_url: 'https://github.com/Boyle-Lab/Blacklist/raw/master/lists/hg38-blacklist.v2.bed.gz'
-genome_dhs_gc: 'gs://chips2-test-data/DHS_hg38.bed'
+## output file paths layout file
+file_layout: '/media/scratch/cherikhsr/cidc_atac/config/file_layout.yaml'
+
+
+## reference genome download locations file
+reference: '/media/scratch/cherikhsr/cidc_atac/config/reference.csv'
+
+
+## sample metadata file
+sample_metadata: '/media/scratch/cherikhsr/cidc_atac/config/sample_metadata.csv'
 
 
 ## preprocess options
@@ -28,37 +31,13 @@ shift: '-75'
 peak_fdr: '0.01'
 
 
-## genome track region option TODO input bedfile to plot multiple tracks
+## genome track region option TODO input bedfile to plot multiple tracks if needed
 track_region: 'chr1:750000-1050000'
 
 
-## program names referenced in some python scripts
+## cloud program [gsutil, aws]
 cloud_prog: gsutil
-openssl_prog: openssl
-fastqdump_prog: parallel-fastq-dump
-cutadapt_prog: cutadapt
-trimmomatic_prog: trimmomatic
 
 
 ## cloud info for pulling input files / pushing results TODO remove encryption ones
-hash: ''
-decrypt_pass: ''
 archive_bucket: ''
-
-
-## sample info TODO update to add this in after reading in sample meta data
-samid:
-- SAM01
-- SAM02
-fastq1:
-- gs://chips2-test-data/atac-test-sample-fastq/SRR16579104_1.fastq.gz
-- gs://chips2-test-data/atac-test-sample-fastq/SRR16579106_1.fastq.gz
-fastq2:
-- gs://chips2-test-data/atac-test-sample-fastq/SRR16579104_2.fastq.gz
-- gs://chips2-test-data/atac-test-sample-fastq/SRR16579106_2.fastq.gz
-tp_adapter_seq:
-- NA
-- NA
-fp_adapter_seq:
-- NA
-- NA
