@@ -35,9 +35,6 @@ peak_fdr: '0.01'
 track_region: 'chr1:750000-1050000'
 
 
-## cloud program [gsutil, aws]
+## cloud program [gsutil, aws] and bucket location
 cloud_prog: gsutil
-
-
-## cloud info for pulling input files / pushing results TODO remove encryption ones
 archive_bucket: ''
