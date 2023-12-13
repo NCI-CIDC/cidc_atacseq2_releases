@@ -112,8 +112,7 @@ workdir: PREDIR
 ## number of cores dedicated to run
 NCORES  = int(config["ncores"])
 ## initial sub folders
-SUBDIRS  = 'benchmark log info progress genome annot input'
-
+SUBDIRS  = 'benchmark log info progress genome annot input analysis analysis/data analysis/report'
 
 ## Set single or paired end
 if (FASTQ_2 != ['']):
@@ -203,6 +202,9 @@ else:
 #    Define any onstart or onsuccess    #
 #########################################
 onsuccess:
+    ## Copy sample_metadata.csv to the PREDIR
+    shell('cp '+SOURCEDIR+'/../config/sample_metadata.csv '+PREDIR)
+
     ## Merge sample rseqc results into single result files
     merged_results = utils.mergeRSEQC(SOURCEDIR)
 
