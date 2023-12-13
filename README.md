@@ -69,20 +69,13 @@ conda config --add channels conda-forge
 conda config --set channel_priority strict
 ```
 
-Create environment for snakemake.
-```
-mamba create -c conda-forge -c bioconda -n snakemake snakemake
-conda activate snakemake
-```
-
-
 ## Pipeline setup and execution:
 Clone git repository to the location where you want to run your analysis and create the conda environment that will be used to run the pipeline.
 ```
 git clone https://github.com/NCI-CIDC/cidc_atac.git
 cd cidc_atac
 ## Creates environment and installs dependencies automatically
-conda env create
+conda env create -f=environment.yaml
 conda activate base_env
 ```
 Pipeline configuration (config.yaml)
