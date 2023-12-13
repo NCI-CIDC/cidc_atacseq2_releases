@@ -59,7 +59,7 @@ for(s in 1:length(mta$samid)){
   samid = mta$samid[s]
 
   chipqc.samid = read.csv(file.path(predir,paste0('chipqc/',samid,'_chipqc.csv')),h=T,stringsAsFactors=F)
-  rownames(chipqc.samid) = chipqc.samid$Sample_ID
+  rownames(chipqc.samid) = chipqc.samid$SampleID
   chipqc.samid = chipqc.samid[,-1]
 
   chipqc.all = rbind(chipqc.all, chipqc.samid)

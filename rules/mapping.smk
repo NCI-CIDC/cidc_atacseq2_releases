@@ -190,14 +190,13 @@ rule bam_qc:
     conda:
         SOURCEDIR+"/../envs/rseqc.yaml"
     params:
-        sample='{sample}',
-        rseqdir=RSEQC
+        sample='{sample}'
     priority: 1
     threads: 1
     shell:
         '''
-          echo "{params.rseqdir}bam_stat.py -i {input.bam} > {output}" | tee {log}
-          {params.rseqdir}bam_stat.py -i {input.bam} > {output} 2>> {log}
+          echo "bam_stat.py -i {input.bam} > {output}" | tee {log}
+          bam_stat.py -i {input.bam} > {output} 2>> {log}
         '''
 
 ## Run RSEQC read_gc.py
@@ -215,14 +214,13 @@ rule bam_gc:
     conda:
         SOURCEDIR+"/../envs/rseqc.yaml"
     params:
-        sample='{sample}',
-        rseqdir=RSEQC
+        sample='{sample}'
     priority: 1
     threads: 1
     shell:
       '''
-        echo "{params.rseqdir}read_GC.py -i {input.bam} -o rseqc/{params.sample}" | tee {log}
-        {params.rseqdir}read_GC.py -i {input.bam} -o rseqc/{params.sample} 2>> {log}
+        echo "read_GC.py -i {input.bam} -o rseqc/{params.sample}" | tee {log}
+        read_GC.py -i {input.bam} -o rseqc/{params.sample} 2>> {log}
 
         ## R script to get txt output info
         echo "out=as.vector(summary(gc));dta = data.frame('{params.sample}',out[1],out[2],out[3],out[4],out[5],out[6]);write.table(dta,file='{output.txt}',sep="\t",row.names=F,col.names=F,quote=F);" >> {output.r}

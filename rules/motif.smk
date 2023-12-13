@@ -4,6 +4,7 @@ rule configure_hg38:
         hg38_path=PREDIR+"/motif/homer_hg38"
     conda:
        SOURCEDIR+"/../envs/homer.yaml"
+    priority: 1
     threads: 1
     shell:
        """
@@ -33,6 +34,7 @@ rule find_motifs_narrowPeak:
         SOURCEDIR+"/../envs/homer.yaml"
     params:
         preparsed_dir=PREDIR+"/motif/preparsed/"
+    priority: 1
     threads: 1
     shell:
         """
@@ -62,6 +64,7 @@ rule find_motifs_summits:
         SOURCEDIR+"/../envs/homer.yaml"
     params:
         preparsed_dir=PREDIR+"/motif/preparsed/"
+    priority: 1
     threads: 1
     shell:
         """
@@ -91,6 +94,7 @@ rule find_motifs_broadPeak:
         SOURCEDIR+"/../envs/homer.yaml"
     params:
         preparsed_dir=PREDIR+"/motif/preparsed/"
+    priority: 1
     threads: 1
     shell:
         """
