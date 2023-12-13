@@ -1,0 +1,41 @@
+## workflow set up
+# working output dir
+predir: '/media/scratch/cherikhsr/atac_test_output'
+# source dir for supporting scripts
+srcdir: '/media/scratch/cherikhsr/cidc_atac/source'
+# file to write running log
+log_file: '/media/scratch/cherikhsr/atac_test_output/pipeline.log'
+# number of CPU cores dedicated to entire workflow
+ncores: 16
+
+
+## output file paths layout file
+file_layout: 'config/file_layout.yaml'
+
+
+## reference genome download locations file
+reference: 'config/reference.csv'
+
+
+## sample metadata file
+sample_metadata: 'config/sample_metadata.csv'
+
+
+## preprocess options
+quality_trim: '20'
+
+
+## peak calling options
+peak_mode: 'narrow'
+ext_size: '150'
+shift: '-75'
+peak_fdr: '0.01'
+
+
+## genome track region option TODO input bedfile to plot multiple tracks if needed
+track_region: 'chr1:750000-1050000'
+
+
+## cloud program [gsutil, aws] and bucket location
+cloud_prog: 'gsutil'
+archive_bucket: ''

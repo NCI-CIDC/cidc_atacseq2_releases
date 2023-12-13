@@ -101,19 +101,3 @@ targets:
     broadPeak_1k: "{sample}_gene_score_1k_broadPeak.txt"
     broadPeak_10k: "{sample}_gene_score_10k_broadPeak.txt"
     broadPeak_100k: "{sample}_gene_score_100k_broadPeak.txt"
-
-## DOWNSTREAM ANALYSIS ## TODO
-#gene_target:
-#    csv: "{sample}_gene_target.csv"
-#motif:
-#    csv: "{sample}_homer.csv"
-#conservation:
-#    csv: "{sample}_conserv.csv"
-
-
-## REPORT ## TODO
-#report:
-#    html: "{submissionID}_cidc_atac_report.html"
-#    fig:
-#    tab:
-
