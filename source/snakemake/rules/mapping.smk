@@ -54,7 +54,9 @@ rule filter_bam:
     output:
         dup_bam=paths.bam.dup_bam,
         metrics=paths.bam.metrics,
-        temp_bam=paths.bam.temp_bam,
+        flags_bam=paths.bam.flags_bam,
+        blacklist_bam=paths.bam.blacklist_bam,
+        fixmate_bam=paths.bam.fixmate_bam,
         filtered_bam=paths.bam.filtered_bam,
         index=paths.bam.filtered_index
     benchmark:
@@ -74,15 +76,27 @@ rule filter_bam:
           samtools index {output.dup_bam}
 
           ## Remove reads that are unmapped, mate unmapped (for paired-end), not primary alignment,
-          ## fail platform/vendor quality checks, and PCR or optical duplicates. Also filters
-          ## reads aligned to chrM, chrUN, _random, chrEBV.
-          samtools view -b -F 1804 -L {input.bed} {output.dup_bam} -o {output.temp_bam}
+          ## fail platform/vendor quality checks, and PCR or optical duplicates. Additionally, 
+          ## the reads with a MAPQ of less than 30  and reads aligned to chrM, 
+          ## chrUN, _random, chrEBV are filtered.
+          samtools view -b -F 1804 -q 30 -L {input.bed} {output.dup_bam} -o {output.flags_bam}
 
           ## Remove alignments that are located in the hg38 blacklist
-          bedtools intersect -v -abam {output.temp_bam} -b {input.blacklist} > {output.filtered_bam}
+          bedtools intersect -v -abam {output.flags_bam} -b {input.blacklist} > {output.blacklist_bam}
          
+          ## Use samtools fixmate to update the flags for the reads whose mate got filtered
+          ## and are no longer properly paired. Fixmate requires the bam to be sorted
+          ## by query name first.
+          samtools sort -n {output.blacklist_bam} -o - | samtools fixmate - {output.fixmate_bam}
+          
+          ## Filter the bam for reads that are properly paired and sort the bam by its coordinates
+          samtools view -b -f 2 {output.fixmate_bam} | samtools sort -o {output.filtered_bam} -
+
           ## Index the final filtered bam
           samtools index -@ {threads} {output.filtered_bam} -o {output.index}
+
+          ## export rule env details
+          conda env export --no-builds > info/filter_bam.info
         '''
 
 ## Perform tn5 adjustment
@@ -148,7 +162,7 @@ rule sample_bam:
 ## Run FASTQC
 rule fastqc:
     input:
-        rules.tn5_adjust_bam.output.adj_bam
+        rules.filter_bam.output.filtered_bam
     output:
         paths.fastqc.targz
     benchmark:
@@ -159,9 +173,9 @@ rule fastqc:
         SOURCEDIR+"/../envs/fastqc.yaml"
     params:
         sample='{sample}',
-        fq_base='fastqc/{sample}_fastqc',
-        fq_zip='fastqc/{sample}_fastqc.zip',
-        fq_html='fastqc/{sample}_fastqc.html'
+        fq_base='fastqc/{sample}_filtered_fastqc',
+        fq_zip='fastqc/{sample}_filtered_fastqc.zip',
+        fq_html='fastqc/{sample}_filtered_fastqc.html'
     priority: 1
     threads: 1
     shell:
@@ -179,8 +193,8 @@ rule fastqc:
 ## Run RSEQC bam_stat.py
 rule bam_qc:
     input:
-        bam=rules.tn5_adjust_bam.output.adj_bam,
-        idx=rules.tn5_adjust_bam.output.index
+        bam=rules.filter_bam.output.filtered_bam,
+        idx=rules.filter_bam.output.index
     output:
         paths.rseqc.bamqc_txt
     benchmark:
@@ -203,8 +217,8 @@ rule bam_qc:
 ## Run RSEQC read_gc.py
 rule bam_gc:
     input:
-        bam=rules.tn5_adjust_bam.output.adj_bam,
-        idx=rules.tn5_adjust_bam.output.index
+        bam=rules.filter_bam.output.filtered_bam,
+        idx=rules.filter_bam.output.index
     output:
         r=paths.rseqc.bamgc_r,
         txt=paths.rseqc.bamgc_txt
