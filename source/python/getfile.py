@@ -30,13 +30,15 @@ import utils
 
 
 ## Download file(s) from AWS S3 or Google Cloud storage, return path to result
-def downloadCloudFile(in_file,cloud):
+def downloadCloudFile(in_file,out_file,cloud):
 	res = []
 	for f in in_file:
 		if('aws' in cloud):
-			cmd = cloud + ' s3 cp ' + f + ' ' + os.getcwd() + '/' + os.path.basename(f)
+			#cmd = cloud + ' s3 cp ' + f + ' ' + os.getcwd() + '/' + os.path.basename(f)
+                        cmd = cloud + ' s3 cp ' + f + ' ' + out_file
 		else:
-			cmd = cloud + ' cp ' + f + ' ' + os.getcwd() + '/' + os.path.basename(f)
+			#cmd = cloud + ' cp ' + f + ' ' + os.getcwd() + '/' + os.path.basename(f)
+                        cmd = cloud + ' cp ' + f + ' ' + out_file
 		utils.logging_call(cmd, shell=True)
 		res.append(os.path.basename(f))
 	return(res)
@@ -91,7 +93,7 @@ def getFile(in_file, out_file, cloud_prog, fastq_dump_prog, openssl_prog, pw, ha
 	
 	## Download file (if needed)
 	if (in_file[0][0:5] == 's3://' or in_file[0][0:5] == 'gs://'):
-		in_file = downloadCloudFile(in_file, cloud_prog)
+		in_file = downloadCloudFile(in_file, out_file, cloud_prog)
 		file_downloaded = True
 	elif(in_file[0][0:3] == 'SRR'):
 		in_file = downloadSRAFile(in_file, fastq_dump_prog, end)
@@ -130,8 +132,8 @@ def getFile(in_file, out_file, cloud_prog, fastq_dump_prog, openssl_prog, pw, ha
 	
 	## Move if single downloaded file
 	elif (len(in_file) == 1 and file_downloaded):
-		os.rename(in_file[0], out_file)
-	
+		#os.rename(in_file[0], out_file)
+                print("Download successful")	
 	## Make a copy if single local file
 	elif (len(in_file) == 1 and not file_downloaded):
 		#cmd = 'cp '+in_file[0]+' '+out_file
