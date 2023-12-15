@@ -1,9 +1,10 @@
 from box import Box
 
 WRAPPER_PREFIX = f"file:{workflow.basedir}/wrappers"
+
 OUTDIR = Path(config["predir"])
 
-#TODO move the df constitution here instead of in Snakefile
+#TODO: move df instantiation to a function here like this instead of cluttering up the Snakefile
 def create_config_dataframes():
     # one row per reference genome
     reference_df = -1 #

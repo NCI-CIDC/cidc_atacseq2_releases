@@ -59,8 +59,10 @@ import putfile
 import utils
 import time
 
+<<<<<<< conserve_new
 #added back in for to_log and to_benchmark functions
 include: "./rules/common.smk"
+
 
 ## create file accessor
 paths = create_path_accessor()
