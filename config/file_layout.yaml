@@ -76,6 +76,12 @@ peak:
     csv_narrowPeak: "{sample}_dhs_stats_narrowPeak.csv"
     csv_broadPeak: "{sample}_dhs_stats_broadPeak.csv"
 
+conservation:
+    png: "{sample}.conservation.png"
+    thumb: "{sample}.conservation.thumb"
+    r: "{sample}.conservation.R"
+    score: "{sample}.score.txt"
+
 chipqc:
     csv: "{sample}_chipqc.csv"
 
