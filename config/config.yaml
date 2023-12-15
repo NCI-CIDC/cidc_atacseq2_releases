@@ -1,10 +1,12 @@
 ## workflow set up
 # working output dir
+
 predir: '/media/analysis/beta_atac_test_output'
 # source dir for supporting scripts
 srcdir: '/media/analysis/cidc_atac/source'
 # file to write running log
 log_file: '/media/analysis/beta_atac_test_output/pipeline.log'
+
 # number of CPU cores dedicated to entire workflow
 ncores: 60
 
@@ -24,6 +26,8 @@ sample_metadata: 'config/sample_metadata.csv'
 ## preprocess options
 quality_trim: '20'
 
+## conservation options
+width: 4000
 
 ## peak calling options
 peak_mode: 'narrow'

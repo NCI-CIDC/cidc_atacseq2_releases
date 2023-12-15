@@ -4,3 +4,5 @@ genome_gtf,gs://prod-cidc-atac-reference-v1/GCA_000001405.15_GRCh38_full_analysi
 genome_bwa_index,gs://prod-cidc-atac-reference-v1/bwa_index,ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.bwa_index.tar.gz
 genome_blacklist,gs://prod-cidc-atac-reference-v1/hg38-blacklist.v2.bed.gz,https://github.com/Boyle-Lab/Blacklist/raw/master/lists/hg38-blacklist.v2.bed.gz
 genome_dhs,gs://prod-cidc-atac-reference-v1/DHS_hg38.bed,
+conservation,gs://prod-cidc-atac-reference-v1/hg38.phastCons100way.bw,http://hgdownload.cse.ucsc.edu/goldenpath/hg38/phastCons100way/hg38.phastCons100way.bw
+

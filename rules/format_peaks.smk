@@ -28,6 +28,7 @@ rule filter_5k_sorted_narrowPeak:
           head -n 5000 {output.sorted_narrowPeak} > {output.filtered_narrowPeak}
         '''
 
+
 # Sort peak.broadPeak from rule call_peaks by the ninth column (qvalue) and filter for top 5k peaks
 rule filter_5k_sorted_broadPeak:
     input:
@@ -42,3 +43,6 @@ rule filter_5k_sorted_broadPeak:
          sort -r -n -k 9 {input.broadPeak} > {output.sorted_broadPeak}
          head -n 5000 {output.sorted_broadPeak} > {output.filtered_broadPeak}
        '''
+
+
+

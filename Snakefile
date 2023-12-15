@@ -59,7 +59,10 @@ import putfile
 import utils
 import time
 
-include: "../rules.common.smk"
+<<<<<<< conserve_new
+#added back in for to_log and to_benchmark functions
+include: "./rules/common.smk"
+
 
 ## create file accessor
 paths = create_path_accessor()
@@ -167,6 +170,8 @@ OUTPUT = [expand(paths.rseqc.bamqc_txt, sample=SAMID),
           expand(paths.peak.annot_tab, sample=SAMID),
           expand(paths.ptw.gobp, sample=SAMID),
           expand(paths.ptw.kegg, sample=SAMID),
+          expand(paths.peak.filtered_sorted_narrowPeak, sample=SAMID),	  
+#          expand(paths.conservation.score, sample=SAMID),	  
           expand(paths.track.png, sample=SAMID)]
 
 if PEAK_MODE == "narrow":

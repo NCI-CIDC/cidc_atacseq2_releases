@@ -1,7 +1,8 @@
 from box import Box
 
 WRAPPER_PREFIX = f"file:{workflow.basedir}/wrappers"
-OUTDIR = Path(config["pre_dir"])
+
+OUTDIR = Path(config["predir"])
 
 #TODO: move df instantiation to a function here like this instead of cluttering up the Snakefile
 def create_config_dataframes():
