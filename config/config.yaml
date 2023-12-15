@@ -2,7 +2,7 @@
 # working output dir
 predir: '/media/storage/atac_test_output'
 # source dir for supporting scripts
-srcdir: '/home/pendletonmr_nih_gov/dcidc_atac/source'
+srcdir: '/home/pendletonmr_nih_gov/cidc_atac/source'
 # file to write running log
 log_file: '/media/storage/atac_test_output/pipeline.log'
 # number of CPU cores dedicated to entire workflow
