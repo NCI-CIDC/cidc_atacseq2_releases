@@ -59,18 +59,7 @@ import putfile
 import utils
 import time
 
-
-# Read in other supporting config files
-def create_path_accessor(prefix: Path = Path(PREDIR)) -> Box:
-    """Create a Box to provide '.' access to hierarchy of paths"""
-    data = yaml.load(Path(config["file_layout"]).open(), Loader=yaml.SafeLoader)
-    paths = {}
-    for directory in data.keys():
-        paths[directory] = {}
-        for file_alias, file_name in data[directory].items():
-            p = str(prefix / directory / file_name)
-            paths[directory][file_alias] = str(p)
-    return Box(paths, frozen_box=True)
+include: "../rules.common.smk"
 
 ## create file accessor
 paths = create_path_accessor()
