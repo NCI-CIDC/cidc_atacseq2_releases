@@ -134,3 +134,18 @@ rule retrieve_hg38_dhs:
     shell:
         "gsutil cp {params.dhs_uri} {output}"
 
+
+
+## Retrieve evolutionary bigwig file dev GCP bucket. This might not be final location of the file.
+## If file location changes, the shell directive needs to be updated.
+rule retrieve_conservation_bw:
+    output:
+        paths.annot.bw
+    benchmark:
+        to_benchmark(paths.annot.bw)
+    params:
+        dhs_uri=GENOME_CONSERVATION_URI
+    threads: 1
+    shell:
+        "gsutil cp {params.dhs_uri} {output}"
+

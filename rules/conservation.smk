@@ -3,9 +3,9 @@
 # _logfile=output_path + "/logs/conservation.log"
 #_numPngs is used in conservation_plot rule to see how many pngs to expect
 #note: the rule plots 3 runs per png, so for example, 12 runs results in 4 pngs
-_nPerPlot = 3
-_numPngs = math.ceil(len(config['runs'].keys())/float(_nPerPlot))
-_nPngs = [n+1 for n in range(_numPngs)]
+#_nPerPlot = 3
+#_numPngs = math.ceil(len(config['runs'].keys())/float(_nPerPlot))
+#_nPngs = [n+1 for n in range(_numPngs)]
 
 #NOTE: using the _refs from chips.snakefile
 def conservation_targets(wildcards):
@@ -29,25 +29,27 @@ def conservation_targets(wildcards):
 #filtered_sorted_narrowPeak
 #filtered_sorted_summits
 
-
 rule conservation_plotConservation:
     """generate conservation plots"""
     input:
-        peak=paths.peak.filtered_sorted_narrowPeak if PEAK_MODE=='narrow' else paths.peak.filtered_sorted_broadPeak
+        peak=paths.peak.filtered_sorted_narrowPeak if PEAK_MODE=='narrow' else paths.peak.filtered_sorted_broadPeak,
+	bw = paths.annot.bw
     output:
         png = paths.conservation.png,
         thumb = paths.conservation.thumb,
         r = paths.conservation.r,
         score = paths.conservation.score
     params:
-        db=reference_df["conservation"],
+        srcdir = SOURCEDIR,
         width=config["width"],
+#	sample = "{sample}"
         main_output_path=Path(paths.conservation.score).parent
     message: "CONSERVATION: calling conservation script"
     log: to_log(paths.conservation.score)
     benchmark: to_benchmark(paths.conservation.score)
     conda: "../envs/conservation.yaml"
     shell:
-         "source/python/conservation_onebw_plot.py -t Conservation_at_summits -d {params.db} "
-         "-o  {params.main_output_path} "
+         "pwd;"
+         "python3 {params.srcdir}/python/conservation_onebw_plot.py -t Conservation_at_summits -d {input.bw} "
+         "-o  {params.main_output_path}/{wildcards.sample} "
 	 "-l Peak_summits {input.peak} -w {params.width} > {output.score} 2>>{log}"

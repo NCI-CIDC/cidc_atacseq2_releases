@@ -8,10 +8,11 @@ genome:
     filtered_fai: "GCA_000001405.15_GRCh38_no_alt_analysis_set_filtered.fna.fai"
     bed: "GCA_000001405.15_GRCh38_no_alt_analysis_set_filtered.bed"
     dhs: "DHS_hg38.bed"
+
 annot:
     gtf: "GCA_000001405.15_GRCh38_full_analysis_set.refseq_annotation.gtf"
     bed: "GCA_000001405.15_GRCh38_full_analysis_set.refseq_annotation.bed"
-
+    bw: "hg38.phastCons100way.bw"
 ## INGEST
 input:
     input_fastq: "{{sample}}_{read}.fastq.gz"
@@ -77,9 +78,9 @@ peak:
     csv_broadPeak: "{sample}_dhs_stats_broadPeak.csv"
 
 conservation:
-    png: "{sample}.conservation.png"
-    thumb: "{sample}.conservation.thumb"
-    r: "{sample}.conservation.R"
+    png: "{sample}.png"
+    thumb: "{sample}_thumb.png"
+    r: "{sample}.R"
     score: "{sample}.score.txt"
 
 chipqc:

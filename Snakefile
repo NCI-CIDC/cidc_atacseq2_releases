@@ -52,14 +52,17 @@ REPDIR     = PREDIR+'/analysis/report'
 
 
 # Use the source dir to import helper modules
-sys.path.append(SOURCEDIR+'/python')
-import trimadapters
-import getfile
-import putfile
-import utils
-import time
+try:
+    sys.path.append(SOURCEDIR+'/python')
+    import trimadapters
+    import getfile
+    import putfile
+    import utils
+    import time
+except:
+    print("The srcdir value in the config file has not been properly configured. \
+           Please configure the config/config.yaml file and try again.")
 
-<<<<<<< conserve_new
 #added back in for to_log and to_benchmark functions
 include: "./rules/common.smk"
 
@@ -69,6 +72,7 @@ paths = create_path_accessor()
 
 ## read in reference genome locations file
 reference_df = pd.read_table(config["reference"], sep=",")
+print(reference_df)
 ## read in sample metadata file
 sample_metadata_df = pd.read_table(config["sample_metadata"], sep=",", keep_default_na=False)
 
@@ -79,6 +83,7 @@ GENOME_GTF_URI = reference_df.loc[reference_df["ref_file_name"]=="genome_gtf", "
 GENOME_BWA_URI = reference_df.loc[reference_df["ref_file_name"]=="genome_bwa_index", "google_bucket_URI"].item()
 GENOME_BLACKLIST_URI = reference_df.loc[reference_df["ref_file_name"]=="genome_blacklist", "google_bucket_URI"].item()
 GENOME_DHS_URI = reference_df.loc[reference_df["ref_file_name"]=="genome_dhs", "google_bucket_URI"].item()
+GENOME_CONSERVATION_URI = reference_df.loc[reference_df["ref_file_name"]=="conservation", "google_bucket_URI"].item()
 
 
 # Sample info
@@ -171,7 +176,7 @@ OUTPUT = [expand(paths.rseqc.bamqc_txt, sample=SAMID),
           expand(paths.ptw.gobp, sample=SAMID),
           expand(paths.ptw.kegg, sample=SAMID),
           expand(paths.peak.filtered_sorted_narrowPeak, sample=SAMID),	  
-#          expand(paths.conservation.score, sample=SAMID),	  
+          expand(paths.conservation.score, sample=SAMID),	  
           expand(paths.track.png, sample=SAMID)]
 
 if PEAK_MODE == "narrow":
@@ -244,3 +249,4 @@ include: "./rules/format_peaks.smk"
 include: "./rules/track.smk"
 include: "./rules/motif.smk"
 include: "./rules/targets.smk"
+include: "./rules/conservation.smk"
