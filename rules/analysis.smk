@@ -2,7 +2,8 @@
 rule cnv_analysis:
    input:
        bam=rules.tn5_adjust_bam.output.adj_bam,
-       idx=rules.filter_bam.output.index
+       idx=rules.tn5_adjust_bam.output.index
+#idx=rules.filter_bam.output.index ###change to tn5 adjusted bam
    output:
        bed=paths.cnv.bed,
        igv=paths.cnv.igv,
@@ -33,7 +34,7 @@ rule cnv_analysis:
 rule call_peaks:
     input:
         bam=rules.tn5_adjust_bam.output.adj_bam,
-        idx=rules.filter_bam.output.index
+        idx=rules.tn5_adjust_bam.output.index
     output:
         xls=paths.peak.xls,
         peak=paths.peak.peak_narrow if PEAK_MODE=='narrow' else paths.peak.peak_broad,
