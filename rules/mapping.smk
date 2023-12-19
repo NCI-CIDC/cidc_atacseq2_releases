@@ -49,6 +49,7 @@ rule index_bam:
 rule filter_bam:
     input:
         bam=rules.run_bwa.output,
+        bai=rules.index_bam.output,
         blacklist=rules.retrieve_hg38_blacklist.output,
         bed=rules.create_bed.output
     output:
