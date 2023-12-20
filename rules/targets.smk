@@ -54,7 +54,7 @@ rule targets_getNarrowPeaksRPScore10k:
 ## report all gene scores with a decay rate of 100K
 rule targets_getNarrowPeaksRPScore100k:
     input:
-        narrow_peak_bed=paths.targets.narrowPeak_bed,
+        narrow_peak_bed=paths.peak.narrowPeak_bed,
         anot_bed=paths.annot.bed
     output:
         gene_targets_1k=paths.targets.narrowPeak_100k
