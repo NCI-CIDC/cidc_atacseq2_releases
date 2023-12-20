@@ -15,7 +15,7 @@ rule targets_narrowPeakToBed:
     input:
         narrow_peak_sorted=paths.peak.narrowPeak
     output:
-        narrow_peak_bed=paths.targets.narrowPeak_bed
+        narrow_peak_bed=paths.peak.narrowPeak_bed
     priority: 1
     threads: 1
     shell:
@@ -24,7 +24,7 @@ rule targets_narrowPeakToBed:
 ## report all gene scores with a decay rate of 1K
 rule targets_getNarrowPeaksRPScore1k:
     input:
-        narrow_peak_bed=paths.targets.narrowPeak_bed,
+        narrow_peak_bed=paths.peak.narrowPeak_bed,
         anot_bed=paths.annot.bed
     output:
         gene_targets_1k=paths.targets.narrowPeak_1k
@@ -39,7 +39,7 @@ rule targets_getNarrowPeaksRPScore1k:
 ## report all gene scores with a decay rate of 10K
 rule targets_getNarrowPeaksRPScore10k:
     input:
-        narrow_peak_bed=paths.targets.narrowPeak_bed,
+        narrow_peak_bed=paths.peak.narrowPeak_bed,
         anot_bed=paths.annot.bed
     output:
         gene_targets_1k=paths.targets.narrowPeak_10k
@@ -71,7 +71,7 @@ rule targets_broadPeakToBed:
     input:
         broad_peak_sorted=paths.peak.broadPeak
     output:
-        broad_peak_bed=paths.targets.broadPeak_bed
+        broad_peak_bed=paths.peak.broadPeak_bed
     priority: 1
     threads: 1
     shell:
@@ -80,7 +80,7 @@ rule targets_broadPeakToBed:
 ## report all gene scores with a decay rate of 1K
 rule targets_getBroadPeaksRPScore1k:
     input:
-        broad_peak_bed=paths.targets.broadPeak_bed,
+        broad_peak_bed=paths.peak.broadPeak_bed,
         anot_bed=paths.annot.bed
     output:
         gene_targets_1k=paths.targets.broadPeak_1k
@@ -95,7 +95,7 @@ rule targets_getBroadPeaksRPScore1k:
 ## report all gene scores with a decay rate of 10K
 rule targets_getBroadPeaksRPScore10k:
     input:
-        broad_peak_bed=paths.targets.broadPeak_bed,
+        broad_peak_bed=paths.peak.broadPeak_bed,
         anot_bed=paths.annot.bed
     output:
         gene_targets_1k=paths.targets.broadPeak_10k
@@ -110,7 +110,7 @@ rule targets_getBroadPeaksRPScore10k:
 ## report all gene scores with a decay rate of 100K
 rule targets_getBroadPeaksRPScore100k:
     input:
-        broad_peak_bed=paths.targets.broadPeak_bed,
+        broad_peak_bed=paths.peak.broadPeak_bed,
         anot_bed=paths.annot.bed
     output:
         gene_targets_1k=paths.targets.broadPeak_100k
