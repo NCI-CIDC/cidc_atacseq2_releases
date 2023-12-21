@@ -12,8 +12,12 @@ rule contamination_centrifuge_index:
        to_benchmark(paths.centrifuge.tar)
     threads: _microbiome_threads
     conda: "../envs/contamination.yaml"
+    params:
+       dest = Path(paths.centrifuge.tar).parent,
+       URI = CFUG_REF
     shell:
-        '''curl -o {output.tar} https://genome-idx.s3.amazonaws.com/centrifuge/p_compressed%2Bh%2Bv.tar.gz;'''
+       # '''curl -o {output.tar} https://genome-idx.s3.amazonaws.com/centrifuge/p_compressed%2Bh%2Bv.tar.gz;'''
+        '''gsutil cp {params.URI} {params.dest} && '''
         '''tar -xvzf {output.tar} -C centrifuge'''
 
 rule contamination_centrifuge:

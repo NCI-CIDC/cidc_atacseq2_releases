@@ -84,7 +84,7 @@ GENOME_BWA_URI = reference_df.loc[reference_df["ref_file_name"]=="genome_bwa_ind
 GENOME_BLACKLIST_URI = reference_df.loc[reference_df["ref_file_name"]=="genome_blacklist", "google_bucket_URI"].item()
 GENOME_DHS_URI = reference_df.loc[reference_df["ref_file_name"]=="genome_dhs", "google_bucket_URI"].item()
 GENOME_CONSERVATION_URI = reference_df.loc[reference_df["ref_file_name"]=="conservation", "google_bucket_URI"].item()
-
+CFUG_REF = reference_df.loc[reference_df["ref_file_name"]=="centrifuge", "google_bucket_URI"].item()
 
 # Sample info
 ## List of samples to process
