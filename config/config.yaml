@@ -1,11 +1,10 @@
 ## workflow set up
 # working output dir
-
-predir: '/media/analysis/beta_atac_test_output'
+predir: '/media/storage/'
 # source dir for supporting scripts
-srcdir: '/media/analysis/cidc_atac/source'
+srcdir: '/home/shestovma_nih_gov/cidc_atac/source/'
 # file to write running log
-log_file: '/media/analysis/beta_atac_test_output/pipeline.log'
+log_file: '/media/storage/pipeline.log'
 
 # number of CPU cores dedicated to entire workflow
 ncores: 60

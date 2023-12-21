@@ -175,10 +175,11 @@ OUTPUT = [expand(paths.rseqc.bamqc_txt, sample=SAMID),
           expand(paths.peak.annot_tab, sample=SAMID),
           expand(paths.ptw.gobp, sample=SAMID),
           expand(paths.ptw.kegg, sample=SAMID),
-          expand(paths.peak.filtered_sorted_narrowPeak, sample=SAMID),	  
+          expand(paths.peak.filtered_sorted_narrowPeak, sample=SAMID),
+          expand(paths.centrifuge.classification, sample=SAMID),	  	  
           expand(paths.conservation.score, sample=SAMID),	  
           expand(paths.track.png, sample=SAMID)]
-
+          
 if PEAK_MODE == "narrow":
     OUTPUT.append(expand(paths.motif.narrow_peak, sample=SAMID))
     OUTPUT.append(expand(paths.motif.summit, sample=SAMID))
@@ -250,3 +251,4 @@ include: "./rules/track.smk"
 include: "./rules/motif.smk"
 include: "./rules/targets.smk"
 include: "./rules/conservation.smk"
+include: "./rules/contamination.smk"
