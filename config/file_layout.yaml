@@ -23,6 +23,12 @@ rqual_filter:
     qfilter_fastq_single: "{{sample}}_{read}_qual.fastq.gz"
     qfilter_fastq_paired: "{{sample}}_{read}{paired}_qual.fastq.gz"
 
+## CONTAMINATION
+centrifuge:
+    classification: "{sample}_classification.txt"
+    report: "{sample}_report.txt"
+    tar: "p_compressed+h+v.tar.gz"
+    db: "p_compressed+h+v.1.cf"
 
 ## MAPPING
 bam:
