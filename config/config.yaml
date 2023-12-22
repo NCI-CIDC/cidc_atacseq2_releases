@@ -5,7 +5,6 @@ predir: '/media/analysis/beta_atac_test/output/'
 srcdir: '/media/analysis/cidc_atac/source'
 # file to write running log
 log_file: '/media/analysis/cidc_atac/pipeline.log'
-
 # number of CPU cores dedicated to entire workflow
 ncores: 60
 
