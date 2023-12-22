@@ -4,6 +4,6 @@ channels:
 - conda-forge
 - defaults
 dependencies:
-- python>=3.5
-- pybigwig
-- r>=3.4.1
+- python=3.10.13=hd12c33a_0_cpython
+- pybigwig=0.3.22=py310h79000e5_1
+- r=4.3=r43hd8ed1ab_1007
