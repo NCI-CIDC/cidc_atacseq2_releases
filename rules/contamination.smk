@@ -1,44 +1,34 @@
-_microbiome_threads = 60
-
-rule contamination_centrifuge_index:
-    output:
-        tar = paths.centrifuge.tar,
-        db = paths.centrifuge.db
-    log:
-       to_log(paths.centrifuge.tar)
-    message:
-       "Building Centrifuge Index"
-    benchmark:
-       to_benchmark(paths.centrifuge.tar)
-    threads: _microbiome_threads
-    conda: "../envs/contamination.yaml"
-    params:
-       dest = Path(paths.centrifuge.tar).parent,
-       URI = CFUG_REF
-    shell:
-       # '''curl -o {output.tar} https://genome-idx.s3.amazonaws.com/centrifuge/p_compressed%2Bh%2Bv.tar.gz;'''
-        '''gsutil cp {params.URI} {params.dest} && '''
-        '''tar -xvzf {output.tar} -C centrifuge'''
-
-rule contamination_centrifuge:
-     input:
+## Run Centrifuge to classify sequences by assigning them to taxonomic categories
+rule centrifuge:
+    input:
         r1=expand(paths.rqual_filter.qfilter_fastq_paired, read=ENDS, paired=['P','U'])[0],
         r2=expand(paths.rqual_filter.qfilter_fastq_paired, read=ENDS, paired=['P','U'])[2],
-        index=rules.contamination_centrifuge_index.output
-     output:
-        classification = paths.centrifuge.classification
-     log:
-        to_log(paths.centrifuge.classification)
-     message:
-        "Running Centrifuge on {wildcards.sample}"
-     benchmark:
-        to_benchmark(paths.centrifuge.classification)
-     threads: _microbiome_threads
-     conda: "../envs/contamination.yaml"
-     params:
-        tar_file=(rules.contamination_centrifuge_index.output[0]).replace('.tar.gz','')
+        idx=rules.retrieve_centrifuge_idx.output.idx,
+        tch=rules.retrieve_centrifuge_idx.output.tch
+    output:
+        gz=paths.centrifuge.gz,
+        tsv=paths.centrifuge.tsv,
+        tsv_sample=paths.centrifuge.tsv_sample 
+    benchmark:
+        'benchmark/{sample}_centrifuge.tab'
+    log:
+        'log/{sample}_centrifuge.log'
+    conda: 
+        SOURCEDIR+"/../envs/contamination.yaml"
+    params:
+        idx=PREDIR+"/genome/p_compressed+h+v",
+        txt=paths.centrifuge.txt
+    threads: max(1,min(8,NCORES))
+    shell:
+        '''
+          echo "centrifuge -x {params.idx} -p {threads} --host-taxids 9606 -1 {input.r1} -2 {input.r2} -S {params.txt} --report-file {output.tsv} \
+          && gzip {params.txt} \
+          && awk -v sampleID="{wildcards.sample}" 'BEGIN {{OFS="\t"}} {{if (NR == 1) print "sample", $0; else print sampleID, $0}}' {output.tsv} > {output.tsv_sample}" | tee {log}
 
-	#if len(ENDS) == 2 else expa\
-        #nd(paths.rqual_filter.qfilter_fastq_single, read=ENDS)[0]
-     shell:
-        """centrifuge -x {params.tar_file} -p {threads}  -q --host-taxids 9606 -1 {input.r1} -2 {input.r2} -S {output.classification}"""
+          centrifuge -x {params.idx} -p {threads} --host-taxids 9606 -1 {input.r1} -2 {input.r2} -S {params.txt} --report-file {output.tsv} \
+          && gzip {params.txt} \
+          && awk -v sampleID="{wildcards.sample}" 'BEGIN {{OFS="\t"}} {{if (NR == 1) print "sample", $0; else print sampleID, $0}}' {output.tsv} > {output.tsv_sample} 2>> {log}
+ 
+          ## Export rule env details
+          conda env export --no-builds > info/contamination.info
+        '''

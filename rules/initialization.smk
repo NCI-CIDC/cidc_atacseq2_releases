@@ -121,8 +121,7 @@ rule retrieve_hg38_blacklist:
           gunzip {output}.gz
         '''
 
-## Retrieve DHS regions list from dev GCP bucket. This might not be final location of the file.
-## If file location changes, the shell directive needs to be updated.
+## Retrieve DHS regions list from GCP bucket
 rule retrieve_hg38_dhs:
     output:
         paths.genome.dhs
@@ -136,8 +135,7 @@ rule retrieve_hg38_dhs:
 
 
 
-## Retrieve evolutionary bigwig file dev GCP bucket. This might not be final location of the file.
-## If file location changes, the shell directive needs to be updated.
+## Retrieve evolutionary bigwig file from GCP bucket
 rule retrieve_conservation_bw:
     output:
         paths.annot.bw
@@ -149,3 +147,23 @@ rule retrieve_conservation_bw:
     shell:
         "gsutil cp {params.dhs_uri} {output}"
 
+## Retrieve Centrifuge index (bacteria, archaea, viruses, and human) for the contamination module
+rule retrieve_centrifuge_idx:
+    output:
+        tar=temp(paths.genome.tar),
+        idx=paths.genome.idx,
+        tch='progress/centrifuge_idx_downloaded.done'
+    benchmark:
+        'benchmark/retrieve_centrifuge_idx.tab'
+    log:
+        'log/retrieve_centrifuge_idx.log'
+    params:
+        cfug_uri=CFUG_REF
+    shell:
+        '''
+          echo "gsutil cp {params.cfug_uri} {output.tar} && tar -xvzf {output.tar} -C genome \
+          && touch {output.tch}" | tee {log}
+
+          gsutil cp {params.cfug_uri} {output.tar} && tar -xvzf {output.tar} -C genome \
+          && touch {output.tch} 2>> {log}
+        '''

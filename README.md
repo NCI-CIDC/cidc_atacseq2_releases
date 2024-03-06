@@ -76,32 +76,34 @@ git clone https://github.com/NCI-CIDC/cidc_atac.git
 cd cidc_atac
 ## Creates environment and installs dependencies automatically
 conda env create -f=environment.yaml
-conda activate base_env
+conda activate cidc_atac
 ```
 Pipeline configuration (config.yaml)
 * This is where important workflow info is set / stored, This includes paths to reference genomes and sample metadata (sample info and gcloud location of input fastq files), as well as workflow output and source directories and options.
 
 
-Test the pipeline by performing a dryrun. (Don't need to specify --conda-frontend if using mamba)
+Test the pipeline by performing a dryrun:
 ```
 ## Print workflow jobs from start to finish (<ncores> the number of cores for entire workflow):
-snakemake --use-conda --conda-frontend conda --cores <ncores> --rerun-incomplete --forceall --dryrun
+snakemake --use-conda --cores <ncores> --dryrun
 
 ## Print workflow jobs resuming to finish incomplete rules (<ncores> the number of cores for entire workflow):
-snakemake --use-conda --conda-frontend conda --cores <ncores> --rerun-incomplete --dryrun
+snakemake --use-conda --cores <ncores> --rerun-incomplete --dryrun
 ```
 
-Execute the pipeline. (Don't need to specify --conda-frontend if using mamba)
+Execute the pipeline:
 ```
 ## Execute workflow start to finish (<ncores> the number of cores for entire workflow):
-snakemake --use-conda --conda-frontend conda --cores <ncores> --rerun-incomplete --forceall
+snakemake --use-conda --cores <ncores>
+
+## Execute workflow with stdout and stderr logs generated (<ncores> the number of cores for entire workflow):
+snakemake --use-conda --cores <ncores> 2> /path/to/output/directory/run.stderr 1> /path/to/output/directory/run.stdout
+
+## Force execution of all rules regardless of output present (<ncores> the number of cores for entire workflow):
+snakemake --use-conda --cores <ncores> --forceall
 
 ## Execute workflow resuming to finish incomplete rules (<ncores> the number of cores for entire workflow):
-snakemake --use-conda --conda-frontend conda --cores <ncores> --rerun-incomplete
+snakemake --use-conda --cores <ncores> --rerun-incomplete
 ```
-
-# Working:
-* Refinement of pipeline
-
 
 ## Please reach out to Sami Cherikh (cherikhsr@nih.gov) with any questions or to report any issues concerning this framework.

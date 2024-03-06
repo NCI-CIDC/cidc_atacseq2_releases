@@ -72,7 +72,7 @@ paths = create_path_accessor()
 
 ## read in reference genome locations file
 reference_df = pd.read_table(config["reference"], sep=",")
-print(reference_df)
+
 ## read in sample metadata file
 sample_metadata_df = pd.read_table(config["sample_metadata"], sep=",", keep_default_na=False)
 
@@ -176,7 +176,7 @@ OUTPUT = [expand(paths.rseqc.bamqc_txt, sample=SAMID),
           expand(paths.ptw.gobp, sample=SAMID),
           expand(paths.ptw.kegg, sample=SAMID),
           expand(paths.peak.filtered_sorted_narrowPeak, sample=SAMID),
-          expand(paths.centrifuge.classification, sample=SAMID),	  	  
+          expand(paths.centrifuge.tsv_sample, sample=SAMID),	  	  
           expand(paths.conservation.score, sample=SAMID),	  
           expand(paths.track.png, sample=SAMID)]
           
