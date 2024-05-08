@@ -71,10 +71,10 @@ include: "./rules/common.smk"
 paths = create_path_accessor()
 
 ## read in reference genome locations file
-reference_df = pd.read_table(config["reference"], sep=",")
+reference_df = pd.read_table(config["reference"], comment = "#", sep=",")
 print(reference_df)
 ## read in sample metadata file
-sample_metadata_df = pd.read_table(config["sample_metadata"], sep=",", keep_default_na=False)
+sample_metadata_df = pd.read_table(config["sample_metadata"], sep=",", comment = "#", keep_default_na=False)
 
 
 # Reference genome gcloud URI locations

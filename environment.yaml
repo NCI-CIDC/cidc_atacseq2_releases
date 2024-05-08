@@ -1,4 +1,4 @@
-name: base_env
+name: cidc_atac
 channels:
 - conda-forge
 - bioconda
