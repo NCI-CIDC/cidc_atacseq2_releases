@@ -2,7 +2,8 @@
 rule cnv_analysis:
    input:
        bam=rules.tn5_adjust_bam.output.adj_bam,
-       idx=rules.tn5_adjust_bam.output.index
+       idx=rules.tn5_adjust_bam.output.index,
+       done=rules.install_qdnaseq_hg38.output.done
 #idx=rules.filter_bam.output.index ###change to tn5 adjusted bam
    output:
        bed=paths.cnv.bed,

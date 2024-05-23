@@ -212,15 +212,23 @@ onsuccess:
     [shutil.copy2(x, DATADIR) for x in merged_results]
 
     ## call ChIPQC on samples in mta and output results to analysis data dir - set last arg to one of the options [make-report, no-report]
-    shell('Rscript --vanilla '+SOURCEDIR+'/r/init-chipqc-all-peak-metrics.r '+PREDIR+' '+DATADIR+' sample_metadata.csv '+PEAK_MODE+' make-report')
+
+    ## 5/10/2024 REPORT IS COMMENTED OUT AND NOT GENERATED. NOTE: The init-chipqc-all-peak-metrics.r script will cause an error for SRR16579104 (cell line)
+    ## and SRR891268_chr22_enriched (DFCI provided sample). Refer to the errow below. Patient samples seem to finish completely with no errors.
+    ## Error in axis(1, at = xv, labels = lv) : no locations are finite
+    ## Calls: ChIPQCreport -> ChIPQCreport -> plotCorHeatmap -> plotCorHeatmap
+  
+    ## This script is currently set up to process multiple samples. An error will be generated if only one sample is run.
+    ## An option to generate a report with one sample using the Rscript init-chipqc-sample-peak-metrics.r will need to be created.
+    #shell('Rscript --vanilla '+SOURCEDIR+'/r/init-chipqc-all-peak-metrics.r '+PREDIR+' '+DATADIR+' sample_metadata.csv '+PEAK_MODE+' make-report')
 
     ## add chipqc output to results to enc and archive if needed
-    merged_results.append(['analysis/report/'+f for f in os.listdir('analysis/report')])
-    merged_results.append('analysis/data/all_chipqc.csv.gz')
+    #merged_results.append(['analysis/report/'+f for f in os.listdir('analysis/report')])
+    #merged_results.append('analysis/data/all_chipqc.csv.gz')
 
     ## knit rmarkdown html report
-    shell('Rscript --vanilla '+SOURCEDIR+'/r/run-report.r '+SOURCEDIR+'/r/cidc_atac-report-slidy.Rmd '+PREDIR+' '+DATADIR+'/../report')
-    merged_results.append('analysis/report/cidc_atac-report-slidy.html')
+    #shell('Rscript --vanilla '+SOURCEDIR+'/r/run-report.r '+SOURCEDIR+'/r/cidc_atac-report-slidy.Rmd '+PREDIR+' '+DATADIR+'/../report')
+    #merged_results.append('analysis/report/cidc_atac-report-slidy.html')
 
     ## Upload main results if needed
     if DOARCHIVE:

@@ -167,3 +167,21 @@ rule retrieve_centrifuge_idx:
           gsutil cp {params.cfug_uri} {output.tar} && tar -xvzf {output.tar} -C genome \
           && touch {output.tch} 2>> {log}
         '''
+
+## Install QDNAseq.hg.38 for the CNV module
+rule install_qdnaseq_hg38:
+    output:
+        done='progress/install_qdnaseq_hg38.done'
+    benchmark:
+        'benchmark/install_qdnaseq_hg38.tab'
+    log:
+        'log/install_qdnaseq_hg38.log'
+    conda:
+        "../envs/cnv_analysis.yaml"
+    params:
+        r=Path(SOURCEDIR) / "r/install-qdnaseq-hg38.r"
+    shell:
+        '''
+          echo "Rscript --vanilla {params.r} {output.done}" | tee {log}  
+          Rscript --vanilla {params.r} {output.done} 2>> {log}
+        '''
