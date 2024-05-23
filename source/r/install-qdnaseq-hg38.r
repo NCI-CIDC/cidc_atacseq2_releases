@@ -16,19 +16,3 @@ args <- commandArgs(trailingOnly = TRUE)
 output_file = args[1]
 
 file.create(output_file)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
