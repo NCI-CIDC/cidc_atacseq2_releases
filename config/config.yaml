@@ -1,10 +1,10 @@
 ## workflow set up
 # working output dir
-predir: '/media/prev_analysis/contamination_output'
+predir: '/media/prev_analysis/atac_output'
 # source dir for supporting scripts
-srcdir: '/media/analysis/cidc_atac/source'
+srcdir: '/home/pipeline/cidc_atac/source'
 # file to write running log
-log_file: '/media/prev_analysis/contamination_output/pipeline.log'
+log_file: '/media/prev_analysis/atac_output/pipeline.log'
 # number of CPU cores dedicated to entire workflow
 ncores: 60
 
